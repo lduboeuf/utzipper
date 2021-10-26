@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Main.qml</file>
+        <file>ArchiveExplorer.qml</file>
+        <file>About.qml</file>
+    </qresource>
+</RCC>

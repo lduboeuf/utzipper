@@ -1,0 +1,14 @@
+{
+  "clickable_minimum_required": "6.12.0",
+  "builder": "cmake",
+  "kill": "utzip",
+  "dependencies_host": [
+    "extra-cmake-modules"
+    ],
+  "dependencies_target": [
+    "libkf5archive-dev"
+    ],
+    "install_lib": [
+    "/usr/lib/${ARCH_TRIPLET}/libKF5Archive.so.*"
+    ]
+}

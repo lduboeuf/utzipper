@@ -1,0 +1,8 @@
+[Desktop Entry]
+_Name=UT zipper
+Exec=utzip %U
+Icon=assets/logo.svg
+Terminal=false
+Type=Application
+X-Ubuntu-Touch=true
+Keywords=Zip;Compress;Archive;Tar

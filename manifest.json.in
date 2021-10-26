@@ -1,0 +1,16 @@
+{
+    "name": "utzip.lduboeuf",
+    "description": "Archive extrator",
+    "architecture": "@CLICK_ARCH@",
+    "title": "UT zipper",
+    "hooks": {
+        "utzip": {
+            "apparmor": "utzip.apparmor",
+            "desktop":  "utzip.desktop",
+            "content-hub": "utzip-contenthub.json"
+        }
+    },
+    "version": "1.0.0",
+    "maintainer": "Lionel Duboeuf <lduboeuf@ouvaton.org>",
+    "framework" : "@CLICK_FRAMEWORK@"
+}
