@@ -1,8 +1,19 @@
 # UT zipper
 
-A short description of your app
+Archive reader for Ubuntu Touch. 
 
-## License
+[![OpenStore](https://open-store.io/badges/en_US.png)](https://open-store.io/app/utzip.lduboeuf)
+
+# Developper
+
+Relies on https://github.com/KDE/karchive 
+
+## Build
+
+`clickable`
+
+
+# License
 
 Copyright (C) 2021  Your FullName
 
