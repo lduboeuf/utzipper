@@ -21,6 +21,31 @@ Page {
         }
     }
 
+    function selectAll() {
+        const currentIndices = listView.ViewItems.selectedIndices
+        let nextIndices = []
+        for (let i=0; i < archiveModel.rowCount(); i++) {
+            if (!archiveModel.get(i).isDir) {
+                nextIndices.push(i)
+            }
+        }
+        if (currentIndices.length === nextIndices.length) {
+            listView.ViewItems.selectedIndices = []
+        } else {
+            listView.ViewItems.selectedIndices = nextIndices
+        }
+    }
+
+    function share() {
+        const selectedFiles = listView.ViewItems.selectedIndices
+        selectedFiles.forEach(idx => {
+                                  const path = archiveModel.get(idx).fullPath;
+                                  const out = archiveModel.extractFile(path);
+                                  selectedItems.push(resultComponent.createObject(root, {"url": "file://" + out}));
+                              });
+        pageStack.push(picker)
+    }
+
     header: PageHeader {
         id: header
         title: i18n.tr('UT zipper')
@@ -29,17 +54,7 @@ Page {
             Action {
                 iconName: "share"
                 enabled: listView.ViewItems.selectedIndices.length > 0
-                onTriggered: {
-                    const selectedFiles = listView.ViewItems.selectedIndices
-                    selectedFiles.forEach(idx => {
-                                              const path = archiveModel.get(idx).fullPath;
-                                              const out = archiveModel.extractFile(path);
-                                              selectedItems.push(resultComponent.createObject(root, {"url": "file://" + out}));
-                                          });
-                    pageStack.push(picker)
-
-                    console.log("selectedItems", JSON.stringify(selectedItems))
-                }
+                onTriggered: share()
             }
         ]
         extension:
@@ -95,7 +110,6 @@ Page {
                 }
             }
 
-
             ActionBar {
                 anchors.right: parent.right
                 anchors.rightMargin: units.gu(1)
@@ -104,28 +118,12 @@ Page {
                         iconName: "select"
                         text: "select all"
                         enabled: archiveModel.hasFiles
-                        onTriggered: {
-                            const currentIndices = listView.ViewItems.selectedIndices
-                            let nextIndices = []
-                            for (let i=0; i < archiveModel.rowCount(); i++) {
-                                if (!archiveModel.get(i).isDir) {
-                                    nextIndices.push(i)
-                                }
-                            }
-                            if (currentIndices.length === nextIndices.length) {
-                                listView.ViewItems.selectedIndices = []
-                            } else {
-                                listView.ViewItems.selectedIndices = nextIndices
-                            }
-                        }
+                        onTriggered: selectAll()
                     }
                 ]
             }
-
         }
-
     }
-
 
     Label {
         id: errorMsg
@@ -147,7 +145,7 @@ Page {
                 console.log(archiveModel.get(i).name, archiveModel.get(i).isDir)
                 if (!archiveModel.get(i).isDir) {
                     hasFiles = true;
-                    break;
+                    return;
                 }
             }
         }
@@ -209,21 +207,17 @@ Page {
             onPeerSelected: {
                 peer.selectionType = ContentTransfer.Multiple;
                 root.activeTransfer = peer.request();
+                root.activeTransfer.stateChanged.connect(function() {
+                    if (root.activeTransfer.state === ContentTransfer.InProgress) {
+                        console.log("Export: In progress, nb items:", selectedItems.length);
+                        root.activeTransfer.items = selectedItems;
+                        root.activeTransfer.state = ContentTransfer.Charged;
+                        pageStack.pop()
+                    }
+                })
             }
 
             onCancelPressed: pageStack.pop();
-        }
-    }
-
-    Connections {
-        id: stateChangeConnection
-        target: root.activeTransfer ? root.activeTransfer : null
-        onStateChanged: {
-            if (root.activeTransfer.state === ContentTransfer.InProgress) {
-                root.activeTransfer.items = selectedItems;
-                pageStack.pop()
-                root.activeTransfer.state = ContentTransfer.Charged;
-            }
         }
     }
 
@@ -244,5 +238,4 @@ Page {
             cleanup()
         }
     }
-
 }

@@ -43,7 +43,6 @@ class ArchiveReader: public QAbstractListModel {
     Q_PROPERTY(QString currentDir READ currentDir WRITE setCurrentDir NOTIFY currentDirChanged)
     Q_PROPERTY(QString archive READ archive WRITE setArchive NOTIFY archiveChanged)
     Q_PROPERTY(Errors error READ error NOTIFY errorChanged)
-    //Q_PROPERTY(QList<Item> model READ items NOTIFY modelChanged)
 
 public:
     ArchiveReader(QObject *parent = 0);
@@ -76,8 +75,6 @@ public:
 
     Q_INVOKABLE QString extractFile(const QString &path);
     Q_INVOKABLE QVariantMap get(int index) const;
-    //Q_INVOKABLE QQmlListProperty<Item> model(const QString &currentDir);
-    //QQmlListProperty<Item> items();
 
 Q_SIGNALS:
     void modelChanged();

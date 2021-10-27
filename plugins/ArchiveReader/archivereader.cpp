@@ -102,16 +102,14 @@ QString ArchiveReader::extractFile(const QString &path)
     }
 
     QString output = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-    qDebug() << "tmp-dir" << output;
+    qDebug() << "tmp-dir:" << output;
     // Take the root folder from the archive and create a KArchiveDirectory object.
     // KArchiveDirectory represents a directory in a KArchive.
     const KArchiveDirectory *rootDir = mArchivePtr->directory();
     const KArchiveFile *localFile = rootDir->file(path);
     if (localFile) {
-            qDebug() << "extract" << localFile->name();
             bool localCopyTo = localFile->copyTo(output);
-
-            qDebug() << "copy to" << output + "/" + localFile->name();
+            qDebug() << localFile->name() << "copy to" << output + "/" + localFile->name();
             return output + "/" + localFile->name();
     }
 
@@ -141,7 +139,6 @@ KArchive *ArchiveReader::getKArchiveObject(const QString &filePath)
 {
     KArchive *kArch = nullptr;
 
-    qDebug() << filePath << mimeType(filePath);
     QString mime = mimeType(filePath);
 
     if (mime == "application/zip" ||
@@ -187,7 +184,6 @@ void ArchiveReader::extract()
 
     // We can extract all contents from a KArchiveDirectory to a destination.
     // recursive true will also extract subdirectories.
-    qDebug() << "initial debuf:" << rootDir->name();
     extractArchive(rootDir, "");
 
     Q_EMIT modelChanged();
@@ -216,7 +212,6 @@ void ArchiveReader::extractArchive(const KArchiveDirectory *dir, const QString &
             extractArchive((KArchiveDirectory *)entry, path+(*it)+'/');
         }
     }
-    qDebug() << "append " << path << items.count();
     QString key(path);
     key.chop(1); //remove last "/"
 
