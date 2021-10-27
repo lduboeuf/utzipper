@@ -1,0 +1,52 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the utzip.lduboeuf package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: utzip.lduboeuf\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-10-27 14:00+0000\n"
+"PO-Revision-Date: 2021-10-27 15:32+0200\n"
+"Last-Translator: Vojtěch Dubský <xdub@dubix.eu>\n"
+"Language-Team: \n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.0\n"
+
+#: ../qml/About.qml:11 ../qml/ArchiveExplorer.qml:26 ../qml/Main.qml:82
+#: utzip.desktop.in.h:1
+msgid "UT zipper"
+msgstr "UT zipper"
+
+#: ../qml/About.qml:19
+msgid "Archive reader"
+msgstr "Čtečka archivů"
+
+#: ../qml/About.qml:23
+msgid "Should support archive files like zip, gzip, bzip, xz, tar, 7z"
+msgstr "Aplikace by měla by podporovat soubory archivů jako zip, gzip, bzip, xz, tar en 7z"
+
+#: ../qml/ArchiveExplorer.qml:134
+msgid "Sorry, unsupported file format"
+msgstr "Lituji, nepodporovaný formát souboru"
+
+#: ../qml/ArchiveExplorer.qml:198
+msgid "Export to"
+msgstr "Exportovat do"
+
+#: ../qml/Main.qml:48
+msgid "Choose from"
+msgstr "Vybrat z"
+
+#: ../qml/Main.qml:99
+msgid "Open archive"
+msgstr "Otevřít archiv"
+
+#: ../qml/Main.qml:113
+msgid "Create archive"
+msgstr "Vytvořit archiv"
