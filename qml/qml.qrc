@@ -3,5 +3,6 @@
         <file>Main.qml</file>
         <file>ArchiveExplorer.qml</file>
         <file>About.qml</file>
+        <file>ArchiveWriter.qml</file>
     </qresource>
 </RCC>

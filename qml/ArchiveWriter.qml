@@ -1,4 +1,5 @@
 import QtQuick 2.7
+import QtQuick.Layouts 1.3
 import Ubuntu.Components 1.3
 import Ubuntu.Content 1.3
 import Ubuntu.Components.Popups 1.3
@@ -21,40 +22,29 @@ Page {
         }
     }
 
-    function selectAll() {
-        const currentIndices = listView.ViewItems.selectedIndices
-        let nextIndices = []
-        for (let i=0; i < archiveManager.rowCount(); i++) {
-            if (!archiveManager.get(i).isDir) {
-                nextIndices.push(i)
-            }
-        }
-        if (currentIndices.length === nextIndices.length) {
-            listView.ViewItems.selectedIndices = []
-        } else {
-            listView.ViewItems.selectedIndices = nextIndices
-        }
-    }
+    function save(archiveName, suffix) {
 
-    function share() {
-        const selectedFiles = listView.ViewItems.selectedIndices
-        const files = selectedFiles.map(idx => archiveManager.get(idx).fullPath);
-        const outFiles = archiveManager.extractFiles(files);
-        outFiles.forEach( file => {
-            selectedItems.push(resultComponent.createObject(root, {"url": "file://" + file}));
-        })
-        pageStack.push(picker)
+        const name = archiveName.replace(/[\s\?\[\]\/\\=<>:;,\'"&\$#*()|~`!{}%+]+/gi, '_');
+        console.log('name:', name)
+        const archivePath = archiveManager.save(name, suffix)
+        selectedItems = []
+        if (archivePath !== "") {
+            selectedItems.push(resultComponent.createObject(root, {"url": "file://" + archivePath}));
+            pageStack.push(picker)
+        } else {
+            //TODO errorMsg
+        }
     }
 
     header: PageHeader {
         id: header
         title: i18n.tr('UT zipper')
-        subtitle: archiveManager ? archiveManager.archive.replace(/^.*[\\\/]/, '') : ""
+        subtitle: i18n.tr("new Archive")
         trailingActionBar.actions: [
             Action {
                 iconName: "share"
-                enabled: listView.ViewItems.selectedIndices.length > 0
-                onTriggered: share()
+                enabled: listView.count > 0
+                onTriggered: PopupUtils.open(saveDialog)
             }
         ]
         extension:
@@ -115,11 +105,15 @@ Page {
                 anchors.rightMargin: units.gu(1)
                 actions: [
                     Action {
-                        iconName: "select"
-                        text: "select all"
-                        enabled: archiveManager.hasFiles
-                        onTriggered: selectAll()
+                        iconName: "note-new"
+                        text: i18n.tr("import file")
+                        onTriggered: pageStack.push(importPicker)
                     }
+//                    Action {
+//                        iconName: "tab-new"
+//                        text: i18n.tr("new folder")
+//                        onTriggered: PopupUtils.open(addFolderDialog)
+//                    }
                 ]
             }
         }
@@ -153,10 +147,23 @@ Page {
                     width: units.gu(2)
                 }
             }
+            leadingActions: ListItemActions {
+                actions: [
+                    Action {
+                        iconName: "delete"
+                        text: "delete"
+                        onTriggered: {
+                            if (model.isDir) {
+                                archiveManager.removeFolder(model.name, archiveManager.currentDir)
+                            }else {
+                                archiveManager.removeFile(model.name, archiveManager.currentDir)
+                            }
+                        }
+                    }
+                ]
+            }
             onClicked:  {
-                if (!isDir) {
-                    selected = !selected
-                } else {
+                if (isDir) {
                     root.navigation.push(archiveManager.currentDir)
                     if (archiveManager.currentDir !== "") {
                         archiveManager.currentDir = archiveManager.currentDir + "/" + name
@@ -177,6 +184,8 @@ Page {
             title: i18n.tr("Export to")
         }
 
+        property var files: []
+
         ContentPeerPicker {
             id: peerPicker
             anchors.top: pickerHeader.bottom
@@ -186,7 +195,7 @@ Page {
             showTitle: false
 
             onPeerSelected: {
-                peer.selectionType = ContentTransfer.Multiple;
+                peer.selectionType = ContentTransfer.Single;
                 root.activeTransfer = peer.request();
                 root.activeTransfer.stateChanged.connect(function() {
                     if (root.activeTransfer.state === ContentTransfer.InProgress) {
@@ -213,10 +222,97 @@ Page {
         ContentItem {}
     }
 
-    Component.onCompleted: {
-        if (archiveManager) {
-            archiveManager.currentDir = ""
+    Component {
+        id: saveDialog
+        Dialog {
+            id: dialogue
+            title: i18n.tr("Export archive")
+
+            Column {
+                spacing: units.gu(2)
+                Label {
+                    id: label
+                    text: i18n.tr("Archive name:")
+                    elide: Text.ElideRight
+                    font.weight: Font.Light
+                }
+
+                TextField {
+                    id: nametxt
+                    placeholderText: i18n.tr("new archive...")
+                    Layout.fillWidth: true
+                }
+
+                OptionSelector {
+                    id: formatList
+                    Layout.fillWidth: true
+                    text: i18n.tr("Archive format:")
+                    model: ["zip", "tar", "7z"]
+                }
+
+                RowLayout {
+                    width: parent.width
+                    Button {
+                        text: i18n.tr("cancel")
+                        Layout.fillWidth: true
+                        onClicked: PopupUtils.close(dialogue)
+                    }
+                    Button {
+                        text: i18n.tr("save")
+                        Layout.fillWidth: true
+                        enabled: nametxt.inputMethodComposing || nametxt.displayText.length > 0
+                        onClicked: {
+                            root.save(nametxt.displayText, formatList.model[formatList.selectedIndex]);
+                            PopupUtils.close(dialogue)
+                        }
+                    }
+                }
+            }
         }
+    }
+
+
+    Component {
+        id: addFolderDialog
+        Dialog {
+            id: addFolderDialogue
+            title: i18n.tr("Add folder")
+
+            Column {
+                spacing: units.gu(2)
+                Label {
+                    id: label
+                    text: i18n.tr("Folder name")
+                    elide: Text.ElideRight
+                    font.weight: Font.Light
+                }
+
+                TextField {
+                    id:folderNametxt
+                    placeholderText: i18n.tr("new folder...")
+                    Layout.fillWidth: true
+                }
+
+                Button {
+                    text: i18n.tr("ok")
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    //Layout.fillWidth: true
+                    enabled: folderNametxt.inputMethodComposing || folderNametxt.displayText.length > 0
+                    onClicked: {
+                        archiveManager.appendFolder(folderNametxt.displayText, archiveManager.currentDir)
+                        PopupUtils.close(addFolderDialogue)
+                    }
+                    Keys.onReturnPressed: clicked()
+                }
+            }
+        }
+    }
+
+    Component.onCompleted: {
+//        if (archiveManager) {
+//            archiveManager.currentDir = ""
+//        }
+        console.log('pageStack nb:', pageStack.depth)
     }
 
     Connections {

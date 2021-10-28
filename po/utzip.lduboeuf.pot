@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-27 08:58+0000\n"
+"POT-Creation-Date: 2021-10-28 16:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,8 +17,8 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../qml/About.qml:11 ../qml/ArchiveExplorer.qml:51 ../qml/Main.qml:82
-#: utzip.desktop.in.h:1
+#: ../qml/About.qml:11 ../qml/ArchiveExplorer.qml:51
+#: ../qml/ArchiveWriter.qml:41 ../qml/Main.qml:87 utzip.desktop.in.h:1
 msgid "UT zipper"
 msgstr ""
 
@@ -30,22 +30,70 @@ msgstr ""
 msgid "Should support archive files like zip, gzip, bzip, xz, tar, 7z"
 msgstr ""
 
-#: ../qml/ArchiveExplorer.qml:132
+#: ../qml/ArchiveExplorer.qml:132 ../qml/ArchiveWriter.qml:126
 msgid "Sorry, unsupported file format"
 msgstr ""
 
-#: ../qml/ArchiveExplorer.qml:196
+#: ../qml/ArchiveExplorer.qml:177 ../qml/ArchiveWriter.qml:184
 msgid "Export to"
 msgstr ""
 
-#: ../qml/Main.qml:48
+#: ../qml/ArchiveWriter.qml:42 ../qml/Main.qml:105
+msgid "new Archive"
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:109
+msgid "import file"
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:227
+msgid "Export archive"
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:233
+msgid "Archive name:"
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:240
+msgid "new archive..."
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:247
+msgid "Archive format:"
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:254
+msgid "cancel"
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:259
+msgid "save"
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:277
+msgid "Add folder"
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:283
+msgid "Folder name"
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:290
+msgid "new folder..."
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:295
+msgid "ok"
+msgstr ""
+
+#: ../qml/Main.qml:54
 msgid "Choose from"
 msgstr ""
 
-#: ../qml/Main.qml:99
+#: ../qml/Main.qml:115
 msgid "Open archive"
 msgstr ""
 
-#: ../qml/Main.qml:113
+#: ../qml/Main.qml:132
 msgid "Create archive"
 msgstr ""

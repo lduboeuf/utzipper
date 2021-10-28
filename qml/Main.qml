@@ -20,7 +20,7 @@ import QtQuick.Layouts 1.3
 import Ubuntu.Content 1.3
 import Qt.labs.settings 1.0
 
-import ArchiveReader 1.0
+import ArchiveManager 1.0
 
 MainView {
     id: root
@@ -38,27 +38,32 @@ MainView {
             console.log('cleanup transfer');
             activeTransfer.finalize();
         }
+        console.log('cleanup archive');
+        archiveManager.clear();
+    }
+
+    ArchiveManager {
+        id: archiveManager
     }
 
     Page {
-        id: picker
+        id: importPicker
         visible: false
         header: PageHeader {
-            id: pickerHeader
+            id: importPickerHeader
             title: i18n.tr("Choose from")
         }
 
         ContentPeerPicker {
-            id: peerPicker
             //visible: parent.visible
-            anchors.top: pickerHeader.bottom
+            anchors.top: importPickerHeader.bottom
             anchors.topMargin: units.gu(1)
             handler: ContentHandler.Source
             contentType: ContentType.Documents
             showTitle: false
 
             onPeerSelected: {
-                peer.selectionType = ContentTransfer.Single;
+                peer.selectionType = ContentTransfer.Multiple;
                 root.activeTransfer = peer.request();
                 pageStack.pop()
             }
@@ -92,8 +97,19 @@ MainView {
         Column {
             anchors.top: header.bottom
             spacing: units.gu(4)
-            width: units.gu(16)
+            width: units.gu(18)
             anchors.centerIn: parent
+
+
+            Button {
+                text: archiveManager.name === "" ? i18n.tr("new Archive") : archiveManager.name
+                width: parent.width
+                visible: archiveManager.hasData
+                color: theme.palette.normal.positive
+                onClicked: {
+                    pageStack.push("qrc:/ArchiveExplorer.qml", { archiveManager: archiveManager});
+                }
+            }
 
             Button {
                 text: i18n.tr("Open archive")
@@ -101,7 +117,7 @@ MainView {
                 color: theme.palette.normal.positiveText
                 onClicked: {
                    cleanup();
-                   onClicked: pageStack.push(picker)
+                   onClicked: pageStack.push(importPicker)
                 }
             }
 
@@ -109,7 +125,10 @@ MainView {
                 width: parent.width
                 color: theme.palette.normal.positiveText
 
-                enabled: false
+                onClicked: {
+                    archiveManager.clear();
+                    pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
+                }
                 text: i18n.tr("Create archive")
             }
         }
@@ -129,12 +148,38 @@ MainView {
         target: ContentHub
 
         onImportRequested: {
+            console.log('onImportRequested Main')
             if (transfer.state === ContentTransfer.Charged) {
-                if (transfer.items.length > 0) {
-                    activeTransfer = transfer
-                    var filePath = String(transfer.items[0].url).replace('file://', '');
-                    pageStack.push("qrc:/ArchiveExplorer.qml", { archive: filePath})
+
+                var files = [];
+                for (let i=0; i < transfer.items.length; i++) {
+                    files.push(String(transfer.items[i].url).replace('file://', ''));
                 }
+
+                //var files = transfer.items.map((item) => String(item.url).replace('file://', ''));
+                // we can only address one zip file at once
+                if (archiveManager.isArchiveFile(files[0])) {
+                    archiveManager.archive = files[0];
+                    pageStack.push("qrc:/ArchiveExplorer.qml", { archiveManager: archiveManager});
+                } else {
+                    console.log('currentDir', archiveManager.currentDir)
+                    // was on an archive read before, clear it
+                    if (archiveManager.archive !== "") {
+                        if (pageStack.depth > 1) {
+                            pageStack.pop();
+                        }
+
+                        archiveManager.clear()
+                    }
+                    // first time
+                    if (!archiveManager.hasData) {
+                       pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager})
+                    }
+                    files.forEach( file => archiveManager.appendFile(file, archiveManager.currentDir));
+
+
+                }
+
             }
         }
     }
@@ -147,7 +192,19 @@ MainView {
     }
 
     Component.onCompleted: {
-        //pageStack.push("qrc:/ArchiveExplorer.qml", { archive: "/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz"})
+        console.log(pageStack.currentPage, archiveManager.rowCount())
+        //console.log(archiveManager.isArchiveFile('/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'));
+        //archiveManager.appendFile("/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub", "");
+       // pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
+
+
+
+        //archiveManager.archive = "/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz"
+        //pageStack.push("qrc:/ArchiveExplorer.qml", { archiveManager: archiveManager});
+        //pageStack.push("qrc:/ArchiveWriter.qml", { initialFiles: ["/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub"]})
+
+
+
     }
 
 
