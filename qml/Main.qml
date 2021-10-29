@@ -194,6 +194,7 @@ MainView {
             showTitle: false
 
             onPeerSelected: {
+                exportPicker.selectedItems = []
                 exportPicker.files.forEach( file => {
                                   console.log('added:', file)
                     exportPicker.selectedItems.push(resultComponent.createObject(root, {"url": "file://" + file}));
@@ -297,8 +298,8 @@ MainView {
 
     Component.onCompleted: {
         //console.log(archiveManager.isArchiveFile('/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'));
-        archiveManager.appendFile("/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub", "");
-        pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
+        //archiveManager.appendFile("/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub", "");
+        //pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
 
 
 

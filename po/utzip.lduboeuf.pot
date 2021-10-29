@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-29 15:29+0000\n"
+"POT-Creation-Date: 2021-10-29 19:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,7 +26,7 @@ msgstr ""
 msgid "Archive Reader/Writer"
 msgstr ""
 
-#: ../qml/About.qml:28
+#: ../qml/About.qml:27
 msgid "Should support archive files like zip, gzip, bzip, xz, tar, 7z"
 msgstr ""
 
@@ -62,7 +62,7 @@ msgstr ""
 msgid "Archive format"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:263 ../qml/Main.qml:242
+#: ../qml/ArchiveWriter.qml:263 ../qml/Main.qml:243
 msgid "cancel"
 msgstr ""
 
@@ -82,7 +82,7 @@ msgstr ""
 msgid "new folder..."
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:304 ../qml/Main.qml:247
+#: ../qml/ArchiveWriter.qml:304 ../qml/Main.qml:248
 msgid "ok"
 msgstr ""
 
@@ -106,11 +106,11 @@ msgstr ""
 msgid "Export to"
 msgstr ""
 
-#: ../qml/Main.qml:225
+#: ../qml/Main.qml:226
 msgid "Unsupported archive format"
 msgstr ""
 
-#: ../qml/Main.qml:236
+#: ../qml/Main.qml:237
 msgid ""
 "Sorry, not a supported archive file, would you like to start creating an "
 "archive ?"

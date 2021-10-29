@@ -14,7 +14,7 @@ Page {
 
     Column {
         anchors.centerIn: parent
-        spacing: units.gu(2)
+        spacing: units.gu(3)
 
         Label {
             //TODO size
@@ -24,12 +24,7 @@ Page {
         }
 
         Label {
-            //anchors.horizontalCenter: parent.horizontalCenter
             text: i18n.tr("Should support archive files like zip, gzip, bzip, xz, tar, 7z")
         }
-
     }
-
-
-
 }
