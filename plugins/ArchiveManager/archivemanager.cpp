@@ -106,6 +106,7 @@ ArchiveManager::Errors ArchiveManager::error() const
 void ArchiveManager::clear()
 {
     mArchive = "";
+    mName = "";
     setError(Errors::NO_ERRORS);
     beginResetModel();
     mCurrentArchiveItems.clear();

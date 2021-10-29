@@ -56,7 +56,7 @@ MainView {
                             pageStack.pop();
                         }
                     }
-                    //archiveManager.clear()
+
                     files.forEach( file => archiveManager.appendFile(file, archiveManager.currentDir));
                     pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager})
                 });
@@ -109,6 +109,7 @@ MainView {
                 visible: false
                 color: theme.palette.normal.positive
                 onClicked: {
+                    console.log('arch name:', archiveManager.name)
                     if (archiveManager.name === "") {
                         pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
                     } else {
@@ -157,7 +158,6 @@ MainView {
         property bool newArchive: false
 
         ContentPeerPicker {
-            //visible: parent.visible
             anchors.top: importPickerHeader.bottom
             anchors.topMargin: units.gu(1)
             handler: ContentHandler.Source
@@ -240,13 +240,16 @@ MainView {
                 RowLayout {
                     width: parent.width
                     Button {
-                        text: i18n.tr("cancel")
+                        text: i18n.tr("no")
                         Layout.fillWidth: true
+                        color: theme.palette.normal.foregroundText
                         onClicked: PopupUtils.close(newArchiveDialogue)
                     }
                     Button {
-                        text: i18n.tr("ok")
+                        text: i18n.tr("yes")
                         Layout.fillWidth: true
+                        color: theme.palette.focused.positiveText
+                        focus: true
                         onClicked: {
                             confirmed()
                             PopupUtils.close(newArchiveDialogue)
@@ -300,7 +303,7 @@ MainView {
         //console.log(archiveManager.isArchiveFile('/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'));
         //archiveManager.appendFile("/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub", "");
         //pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
-
+        onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub"])
 
 
         //archiveManager.archive = "/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz"

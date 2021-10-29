@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-29 19:44+0000\n"
+"POT-Creation-Date: 2021-10-29 22:18+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -62,7 +62,7 @@ msgstr ""
 msgid "Archive format"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:263 ../qml/Main.qml:243
+#: ../qml/ArchiveWriter.qml:263
 msgid "cancel"
 msgstr ""
 
@@ -82,7 +82,7 @@ msgstr ""
 msgid "new folder..."
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:304 ../qml/Main.qml:248
+#: ../qml/ArchiveWriter.qml:304
 msgid "ok"
 msgstr ""
 
@@ -90,15 +90,15 @@ msgstr ""
 msgid "Current archive"
 msgstr ""
 
-#: ../qml/Main.qml:121
+#: ../qml/Main.qml:122
 msgid "Open archive"
 msgstr ""
 
-#: ../qml/Main.qml:137
+#: ../qml/Main.qml:138
 msgid "Create archive"
 msgstr ""
 
-#: ../qml/Main.qml:155
+#: ../qml/Main.qml:156
 msgid "Choose from"
 msgstr ""
 
@@ -114,4 +114,12 @@ msgstr ""
 msgid ""
 "Sorry, not a supported archive file, would you like to start creating an "
 "archive ?"
+msgstr ""
+
+#: ../qml/Main.qml:243
+msgid "no"
+msgstr ""
+
+#: ../qml/Main.qml:249
+msgid "yes"
 msgstr ""
