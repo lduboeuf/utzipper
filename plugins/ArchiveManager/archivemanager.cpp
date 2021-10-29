@@ -36,13 +36,15 @@ ArchiveManager::ArchiveManager(QObject *parent) : QAbstractListModel(parent), mE
     archiveMimeTypes.insert("zip", { "application/zip", "application/x-zip", "application/x-zip-compressed" });
     archiveMimeTypes.insert("tar", { "application/x-compressed-tar", "application/x-bzip-compressed-tar", "application/x-lzma-compressed-tar", "application/x-xz-compressed-tar", "application/x-gzip", "application/x-bzip", "application/x-lzma", "application/x-xz" });
     archiveMimeTypes.insert("7z", { "application/x-7z-compressed" });
+
+    // working directory
+    QString output = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/imports";
+    QDir().mkdir(output);
+    setTempDir(output);
 }
 
 ArchiveManager::~ArchiveManager()
 {
-//    if (mArchivePtr && mArchivePtr->isOpen()) {
-//        mArchivePtr->close();
-//    }
 }
 
 QString ArchiveManager::archive() const
@@ -72,6 +74,11 @@ bool ArchiveManager::hasFiles() const
 QString ArchiveManager::currentDir() const
 {
     return mCurrentDir;
+}
+
+QString ArchiveManager::tempDir() const
+{
+    return mTempDir;
 }
 
 void ArchiveManager::setCurrentDir(const QString &currentDir)
@@ -120,7 +127,6 @@ void ArchiveManager::clear()
     }
 
     Q_EMIT rowCountChanged();
-    Q_EMIT hasDataChanged();
 }
 
 bool ArchiveManager::hasData() const
@@ -181,7 +187,6 @@ void ArchiveManager::appendFile(const QString &filePath, const QString &parentFo
 
     mArchiveItems[parentFolder] << item;
     setCurrentDir(parentFolder);
-    Q_EMIT hasDataChanged();
 }
 
 void ArchiveManager::removeFile(const QString &name, const QString &parentFolder)
@@ -314,6 +319,14 @@ KArchive *ArchiveManager::getKArchiveObject(const QString &filePath)
     return kArch;
 }
 
+void ArchiveManager::setTempDir(const QString &path)
+{
+    if (mTempDir != path) {
+        mTempDir = path;
+        Q_EMIT tempDirChanged();
+    }
+}
+
 void ArchiveManager::extract()
 {
 
@@ -333,7 +346,6 @@ void ArchiveManager::extract()
     extractArchive(rootDir, "");
 
     mArchivePtr->close();
-    Q_EMIT hasDataChanged();
     Q_EMIT modelChanged();
     setCurrentDir("");
 }

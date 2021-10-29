@@ -14,12 +14,17 @@ Page {
 
     Column {
         anchors.centerIn: parent
+        spacing: units.gu(2)
 
         Label {
-            text: i18n.tr("Archive reader")
+            //TODO size
+            fontSize: "large"
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: i18n.tr("Archive Reader/Writer")
         }
 
         Label {
+            //anchors.horizontalCenter: parent.horizontalCenter
             text: i18n.tr("Should support archive files like zip, gzip, bzip, xz, tar, 7z")
         }
 

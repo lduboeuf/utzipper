@@ -8,18 +8,10 @@ import ArchiveManager 1.0
 Page {
     id: root
     anchors.fill: parent
+    objectName: "ArchiveReader"
 
     property ArchiveManager archiveManager: null
     property var navigation: []
-    property list<ContentItem> selectedItems
-    property var activeTransfer
-
-    function cleanup() {
-        if (activeTransfer) {
-            console.log('cleanup transfer');
-            activeTransfer.finalize();
-        }
-    }
 
     function selectAll() {
         const currentIndices = listView.ViewItems.selectedIndices
@@ -40,10 +32,7 @@ Page {
         const selectedFiles = listView.ViewItems.selectedIndices
         const files = selectedFiles.map(idx => archiveManager.get(idx).fullPath);
         const outFiles = archiveManager.extractFiles(files);
-        outFiles.forEach( file => {
-            selectedItems.push(resultComponent.createObject(root, {"url": "file://" + file}));
-        })
-        pageStack.push(picker)
+        pageStack.push(exportPicker, { files: outFiles })
     }
 
     header: PageHeader {
@@ -169,68 +158,11 @@ Page {
         }
     }
 
-    Page {
-        id: picker
-        visible: false
-        header: PageHeader {
-            id: pickerHeader
-            title: i18n.tr("Export to")
-        }
-
-        ContentPeerPicker {
-            id: peerPicker
-            anchors.top: pickerHeader.bottom
-            anchors.topMargin: units.gu(1)
-            handler: ContentHandler.Destination
-            contentType: ContentType.Documents
-            showTitle: false
-
-            onPeerSelected: {
-                peer.selectionType = ContentTransfer.Multiple;
-                root.activeTransfer = peer.request();
-                root.activeTransfer.stateChanged.connect(function() {
-                    if (root.activeTransfer.state === ContentTransfer.InProgress) {
-                        console.log("Export: In progress, nb items:", selectedItems.length);
-                        root.activeTransfer.items = selectedItems;
-                        root.activeTransfer.state = ContentTransfer.Charged;
-                        pageStack.pop()
-                    }
-                })
-            }
-
-            onCancelPressed: pageStack.pop();
-        }
-    }
-
-    ContentTransferHint {
-        id: transferHint
-        anchors.fill: parent
-        activeTransfer: root.activeTransfer
-    }
-
-    Component {
-        id: resultComponent
-        ContentItem {}
-    }
-
-    Component.onCompleted: {
-        if (archiveManager) {
-            archiveManager.currentDir = ""
-        }
-    }
-
     Connections {
         target: archiveManager
 
         onCurrentDirChanged: {
             listView.ViewItems.selectedIndices = []
-        }
-    }
-
-    Connections {
-        target: Qt.application
-        onAboutToQuit: {
-            cleanup()
         }
     }
 }

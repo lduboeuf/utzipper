@@ -31,8 +31,8 @@ class ArchiveManager: public QAbstractListModel {
     Q_PROPERTY(QString archive READ archive WRITE setArchive NOTIFY archiveChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
     Q_PROPERTY(bool hasFiles READ hasFiles NOTIFY hasFilesChanged)
-    Q_PROPERTY(bool hasData READ hasData NOTIFY hasDataChanged)
     Q_PROPERTY(Errors error READ error NOTIFY errorChanged)
+    Q_PROPERTY(QString tempDir READ tempDir NOTIFY tempDirChanged)
 
 public:
     ArchiveManager(QObject *parent = 0);
@@ -62,13 +62,13 @@ public:
     void setArchive(const QString &path);
     QString name() const;
     bool hasFiles() const;
-    bool hasData() const;
     QString currentDir() const;
+    QString tempDir() const;
     void setCurrentDir(const QString &currentDir);
     Errors error() const;
 
     Q_INVOKABLE void clear();
-    //Q_INVOKABLE bool hasData();
+    Q_INVOKABLE bool hasData() const;
     Q_INVOKABLE QStringList extractFiles(const QStringList &files);
     Q_INVOKABLE QVariantMap get(int index) const;
     Q_INVOKABLE bool isArchiveFile(const QString &path);
@@ -87,7 +87,7 @@ Q_SIGNALS:
     void errorChanged();
     void hasFilesChanged();
     void nameChanged();
-    void hasDataChanged();
+    void tempDirChanged();
 
 protected Q_SLOTS:
     void extract();
@@ -98,6 +98,7 @@ private:
     QString mCurrentDir;
     QString mArchive;
     QString mName;
+    QString mTempDir;
     bool mHasFiles;
     //KArchive* mArchivePtr;
     Errors mError;
@@ -107,7 +108,7 @@ private:
     QString mimeType( const QString &filePath ) const;
     KArchive* getKArchiveObject(const QString &filePath);
 
-
+    void setTempDir(const QString &path);
     void extractArchive(const KArchiveDirectory *dir, const QString &path);
 };
 
