@@ -22,31 +22,21 @@
 #include <QObject>
 #include <KArchive>
 
-class Item  {
+#include "archiveitem.h"
 
-public:
-    Item(const QString& name, bool isDir, const QString& fullPath);
-
-     QString name() const;
-     bool isDir() const;
-     QString fullPath() const;
-
-private:
-    QString mName;
-    bool mIsDir;
-    QString mFullPath;
-};
-
-class ArchiveReader: public QAbstractListModel {
+class ArchiveManager: public QAbstractListModel {
     Q_OBJECT
 
     Q_PROPERTY(QString currentDir READ currentDir WRITE setCurrentDir NOTIFY currentDirChanged)
     Q_PROPERTY(QString archive READ archive WRITE setArchive NOTIFY archiveChanged)
+    Q_PROPERTY(QString name READ name NOTIFY nameChanged)
+    Q_PROPERTY(bool hasFiles READ hasFiles NOTIFY hasFilesChanged)
     Q_PROPERTY(Errors error READ error NOTIFY errorChanged)
+    Q_PROPERTY(QString tempDir READ tempDir NOTIFY tempDirChanged)
 
 public:
-    ArchiveReader(QObject *parent = 0);
-    ~ArchiveReader();
+    ArchiveManager(QObject *parent = 0);
+    ~ArchiveManager();
 
     enum ItemRoles {
             NameRole = Qt::UserRole + 1,
@@ -58,6 +48,7 @@ public:
         NO_ERRORS,
         UNSUPPORTED_FILE_FORMAT,
         ERROR_READ,
+        ERROR_WRITE,
         ERROR_UNKNOWN
     };
     Q_ENUM(Errors)
@@ -69,12 +60,24 @@ public:
 
     QString archive() const;
     void setArchive(const QString &path);
+    QString name() const;
+    bool hasFiles() const;
     QString currentDir() const;
+    QString tempDir() const;
     void setCurrentDir(const QString &currentDir);
     Errors error() const;
 
-    Q_INVOKABLE QString extractFile(const QString &path);
+    Q_INVOKABLE void clear();
+    Q_INVOKABLE bool hasData() const;
+    Q_INVOKABLE QStringList extractFiles(const QStringList &files);
     Q_INVOKABLE QVariantMap get(int index) const;
+    Q_INVOKABLE bool isArchiveFile(const QString &path);
+    Q_INVOKABLE void appendFile(const QString &filePath, const QString &parentFolder);
+    Q_INVOKABLE void removeFile(const QString &name, const QString &parentFolder);
+    Q_INVOKABLE void appendFolder(const QString &name, const QString &parentFolder);
+    Q_INVOKABLE void removeFolder(const QString &name, const QString &parentFolder);
+    Q_INVOKABLE QString save(const QString &archiveName, const QString &suffix);
+
 
 Q_SIGNALS:
     void modelChanged();
@@ -82,22 +85,30 @@ Q_SIGNALS:
     void archiveChanged();
     void rowCountChanged();
     void errorChanged();
+    void hasFilesChanged();
+    void nameChanged();
+    void tempDirChanged();
 
 protected Q_SLOTS:
     void extract();
+    void onRowCountChanged();
     void setError(const Errors& error);
 
 private:
     QString mCurrentDir;
     QString mArchive;
-    KArchive* mArchivePtr;
+    QString mName;
+    QString mTempDir;
+    bool mHasFiles;
+    //KArchive* mArchivePtr;
     Errors mError;
-    QMap<QString, QList<Item>> mItems;
-    QList<Item> mCurrentItems;
+    QMap<QString, QList<ArchiveItem>> mArchiveItems;
+    QMap<QString, QStringList> archiveMimeTypes;
+    QList<ArchiveItem> mCurrentArchiveItems;
     QString mimeType( const QString &filePath ) const;
     KArchive* getKArchiveObject(const QString &filePath);
 
-
+    void setTempDir(const QString &path);
     void extractArchive(const KArchiveDirectory *dir, const QString &path);
 };
 

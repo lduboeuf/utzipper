@@ -1,10 +1,11 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(PLUGIN "ArchiveReader")
+set(PLUGIN "ArchiveManager")
 
 set(
     SRC
     plugin.cpp
-    archivereader.cpp
+    archiveitem.cpp
+    archivemanager.cpp
 )
 
 set(CMAKE_AUTOMOC ON)

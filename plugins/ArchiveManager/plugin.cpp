@@ -18,9 +18,9 @@
 #include <QtQml/QQmlContext>
 
 #include "plugin.h"
-#include "archivereader.h"
+#include "archivemanager.h"
 
 void ArchiveReaderPlugin::registerTypes(const char *uri) {
-    //@uri ArchiveReader
-    qmlRegisterType<ArchiveReader>(uri,1, 0, "ArchiveReader");
+    //@uri ArchiveManager
+    qmlRegisterType<ArchiveManager>(uri,1, 0, "ArchiveManager");
 }
