@@ -1,6 +1,6 @@
 # UT zipper
 
-Archive reader for Ubuntu Touch. 
+Archive reader/writer for Ubuntu Touch. 
 
 [![OpenStore](https://open-store.io/badges/en_US.png)](https://open-store.io/app/utzip.lduboeuf)
 
@@ -15,7 +15,8 @@ Relies on https://github.com/KDE/karchive
 
 # License
 
-Copyright (C) 2021  Your FullName
+Copyright (C) 2021 Lionel Duboeuf
+KArchive : https://github.com/KDE/karchive
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License version 3, as published
 by the Free Software Foundation.
