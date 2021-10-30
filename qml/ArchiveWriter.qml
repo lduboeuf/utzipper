@@ -22,14 +22,21 @@ Page {
         if (archivePath !== "") {
             pageStack.push(exportPicker, { files: [archivePath]})
         } else {
+            console.warn('error while exporting')
             //TODO errorMsg
         }
     }
 
     header: PageHeader {
         id: header
-        title: i18n.tr('UT zipper')
-        subtitle: i18n.tr("new Archive")
+        subtitle: i18n.tr('UT zipper')
+        title: i18n.tr("new Archive")
+        leadingActionBar.actions: [
+            Action {
+                iconName: "close"
+                onTriggered: pageStack.pop()
+            }
+        ]
         trailingActionBar.actions: [
             Action {
                 iconName: "share"
@@ -38,104 +45,51 @@ Page {
             }
         ]
         extension:
-//            ActionBar {
-
-//            id: actionBar
-//            numberOfSlots: 2
-
-//            anchors {
-//                left: parent.left
-//                right: parent.right
-//                bottom: parent.bottom
-//                leftMargin: units.gu(1)
-//            }
-//            actions: [
-////                Action {
-////                    iconName: "keyboard-caps-disabled"
-////                    text: "up"
-////                    enabled: archiveManager.currentDir !== ""
-////                    onTriggered: archiveManager.currentDir = root.navigation.pop()
-////                },
-////                Action {
-////                    iconName: "go-home"
-////                    text: "home"
-////                    onTriggered: archiveManager.currentDir = ""
-////                }
-//            ]
-
-//            delegate: AbstractButton {
-//                id: button
-//                action: modelData
-//                width: label.width + icon.width + units.gu(3)
-//                height: parent.height
-//                Rectangle {
-//                    color: UbuntuColors.slate
-//                    opacity: 0.1
-//                    anchors.fill: parent
-//                    visible: button.pressed
-//                }
-//                Icon {
-//                    id: icon
-//                    anchors.verticalCenter: parent.verticalCenter
-//                    name: action.iconName
-//                    width: units.gu(2)
-//                }
-
-//                Label {
-//                    anchors.centerIn: parent
-//                    anchors.leftMargin: units.gu(2)
-//                    id: label
-//                    text: action.text
-//                    font.weight: text === "Confirm" ? Font.Normal : Font.Light
-//                }
-//            }
-
             ActionBar {
-                anchors.right: parent.right
-                anchors.rightMargin: units.gu(1)
-                actions: [
-                    Action {
-                        iconName: "import"
-                        visible: !importBtn.visible
-                        text: i18n.tr("add files")
-                        onTriggered: pageStack.push(importPicker, { newArchive: true })
-                    }
-//                    Action {
-//                        iconName: "tab-new"
-//                        text: i18n.tr("new folder")
-//                        onTriggered: PopupUtils.open(addFolderDialog)
-//                    }
-                ]
-                delegate: AbstractButton {
-                    id: button
-                    action: modelData
-                    width: label.width + icon.width + units.gu(3)
-                    height: parent.height
-                    Rectangle {
-                        color: UbuntuColors.slate
-                        opacity: 0.1
-                        anchors.fill: parent
-                        visible: button.pressed
-                    }
-                    Icon {
-                        id: icon
-                        anchors.verticalCenter: parent.verticalCenter
-                        name: action.iconName
-                        width: units.gu(2)
-                    }
+            anchors.right: parent.right
+            anchors.rightMargin: units.gu(1)
+            actions: [
+                Action {
+                    iconName: "import"
+                    visible: !importBtn.visible
+                    text: i18n.tr("add files")
+                    onTriggered: pageStack.push(importPicker, { newArchive: true })
+                }
+                //                    Action {
+                //                        iconName: "tab-new"
+                //                        text: i18n.tr("new folder")
+                //                        onTriggered: PopupUtils.open(addFolderDialog)
+                //                    }
+            ]
+            delegate: AbstractButton {
+                id: button
+                action: modelData
+                width: label.width + icon.width + units.gu(3)
+                height: parent.height
+                Rectangle {
+                    color: UbuntuColors.slate
+                    opacity: 0.1
+                    anchors.fill: parent
+                    visible: button.pressed
+                }
+                Icon {
+                    id: icon
+                    anchors.verticalCenter: parent.verticalCenter
+                    name: action.iconName
+                    width: units.gu(2)
+                }
 
-                    Label {
-                        anchors.centerIn: parent
-                        anchors.leftMargin: units.gu(2)
-                        id: label
-                        text: action.text
-                        font.weight: text === "Confirm" ? Font.Normal : Font.Light
-                    }
+                Label {
+                    anchors.centerIn: parent
+                    anchors.leftMargin: units.gu(2)
+                    id: label
+                    text: action.text
+                    font.weight: text === "Confirm" ? Font.Normal : Font.Light
                 }
             }
-
         }
-  //  }
+
+    }
 
 
     ListView {
@@ -192,7 +146,7 @@ Page {
         id: errorMsg
         anchors.centerIn: parent
         visible: archiveManager.error != ArchiveManager.NO_ERRORS
-        text: i18n.tr("Sorry, unsupported file format");
+        text: i18n.tr("Oups, something went wrong");
     }
 
     AbstractButton {
@@ -227,7 +181,6 @@ Page {
         onTriggered: pageStack.push(importPicker, { newArchive: true })
     }
 
-
     Component {
         id: saveDialog
         Dialog {
@@ -254,7 +207,7 @@ Page {
                     id: formatList
                     Layout.fillWidth: true
                     text: i18n.tr("Archive format")
-                    model: ["zip", "tar", "7z"]
+                    model: ["zip", "tar", "tar.gz", "tar.bz2", "tar.xz","7z"]
                 }
 
                 RowLayout {
@@ -262,11 +215,13 @@ Page {
                     Button {
                         text: i18n.tr("cancel")
                         Layout.fillWidth: true
+                        color: theme.palette.normal.focus
                         onClicked: PopupUtils.close(dialogue)
                     }
                     Button {
                         text: i18n.tr("save")
                         Layout.fillWidth: true
+                        color: theme.palette.normal.positive
                         enabled: nametxt.inputMethodComposing || nametxt.displayText.length > 0
                         onClicked: {
                             root.save(nametxt.displayText, formatList.model[formatList.selectedIndex]);

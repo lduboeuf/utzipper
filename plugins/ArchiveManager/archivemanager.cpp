@@ -241,7 +241,7 @@ QString ArchiveManager::save(const QString &archiveName, const QString &suffix)
     KArchive* mArchivePtr;
     if (suffix == "zip") {
         mArchivePtr = new KZip(output);
-    } else if (suffix == "tar") {
+    } else if (suffix == "tar" || suffix == "tar.gz" || suffix == "tar.bz2" || suffix == "tar.xz") {
         mArchivePtr = new KTar(output);
     }else if (suffix == "7z"){
         mArchivePtr = new K7Zip(output);
@@ -402,7 +402,6 @@ void ArchiveManager::extractArchive(const KArchiveDirectory *dir, const QString 
             return test1.name().compare(test2.name(), Qt::CaseInsensitive) < 0;
         }
     });
-    qDebug() << "key:" << key;
     mArchiveItems.insert(key, archiveItems);
 }
 

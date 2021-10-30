@@ -48,15 +48,12 @@ MainView {
         } else {
             if (pageStack.currentPage.objectName !== "ArchiveWriter") {
                 // we need to ask
-                const popup = PopupUtils.open(newArchiveDialog);
+                const names = files.map( file => file.replace(/^.*[\\\/]/, ''))
+                const popup = PopupUtils.open(newArchiveDialog, undefined, { "files": names });
                 popup.confirmed.connect(function() {
-                    // was on an archive read before, clear it
-                    if (archiveManager.archive !== "") {
-                        if (pageStack.depth > 1) {
-                            pageStack.pop();
-                        }
+                    if (pageStack.depth > 1) {
+                        pageStack.pop();
                     }
-
                     files.forEach( file => archiveManager.appendFile(file, archiveManager.currentDir));
                     pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager})
                 });
@@ -76,12 +73,6 @@ MainView {
         anchors.fill: parent
         visible: false
 
-        onVisibleChanged: {
-            if (visible) {
-                currentBtn.visible = archiveManager.hasData()
-            }
-        }
-
         header: PageHeader {
             id: header
             title: i18n.tr('UT zipper')
@@ -100,23 +91,6 @@ MainView {
             spacing: units.gu(4)
             width: units.gu(18)
             anchors.centerIn: parent
-
-
-            Button {
-                id: currentBtn
-                text: i18n.tr("Current archive")
-                width: parent.width
-                visible: false
-                color: theme.palette.normal.positive
-                onClicked: {
-                    console.log('arch name:', archiveManager.name)
-                    if (archiveManager.name === "") {
-                        pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
-                    } else {
-                         pageStack.push("qrc:/ArchiveExplorer.qml", { archiveManager: archiveManager});
-                    }
-                }
-            }
 
             Button {
                 text: i18n.tr("Open archive")
@@ -224,7 +198,9 @@ MainView {
         Dialog {
             id: newArchiveDialogue
             title: i18n.tr("Unsupported archive format")
+
             property alias content : label.text
+            property var files: []
 
             signal confirmed()
 
@@ -232,9 +208,30 @@ MainView {
                 spacing: units.gu(2)
                 Label {
                     id: label
-                    width: parent.width
+                    //width: parent.width
+                    anchors.horizontalCenter: parent.horizontalCenter
                     wrapMode: Label.WordWrap
-                    text: i18n.tr("Sorry, not a supported archive file, would you like to start creating an archive ?")
+                    text: i18n.tr("Sorry, not a supported archive file")
+                }
+                Label {
+                    id: label2
+                    //anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.left: label.left
+                    //width: parent.width
+                    wrapMode: Label.WordWrap
+                    text: i18n.tr("Create an archive with:")
+                }
+
+                Repeater {
+                    model: newArchiveDialogue.files
+                    Label {
+                        anchors.left: label.left
+                        anchors.leftMargin: units.gu(1)
+                        //wrapMode: Label.WordWrap
+                        elide: Text.ElideRight
+                        font.weight: Font.Light
+                        text: modelData
+                    }
                 }
 
                 RowLayout {
@@ -242,13 +239,13 @@ MainView {
                     Button {
                         text: i18n.tr("no")
                         Layout.fillWidth: true
-                        color: theme.palette.normal.foregroundText
+                        color: theme.palette.normal.focus
                         onClicked: PopupUtils.close(newArchiveDialogue)
                     }
                     Button {
                         text: i18n.tr("yes")
                         Layout.fillWidth: true
-                        color: theme.palette.focused.positiveText
+                        color: theme.palette.normal.positive
                         focus: true
                         onClicked: {
                             confirmed()
@@ -274,6 +271,9 @@ MainView {
 
                 if (pageStack.currentPage.objectName !== "ArchiveWriter") {
                     cleanup();
+                    if (pageStack.depth > 1) {
+                        pageStack.pop();
+                    }
                 }
 
                 var files = [];
@@ -283,7 +283,6 @@ MainView {
                         files.push(String(item.url).replace('file://', ''));
                     }
                 }
-                console.log('output', files);
                 transfer.finalize();
                 onImportedFiles(files)
 
@@ -301,14 +300,7 @@ MainView {
 
     Component.onCompleted: {
         //console.log(archiveManager.isArchiveFile('/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'));
-        //archiveManager.appendFile("/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub", "");
-        //pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
-        onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub"])
-
-
-        //archiveManager.archive = "/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz"
-        //pageStack.push("qrc:/ArchiveExplorer.qml", { archiveManager: archiveManager});
-        //pageStack.push("qrc:/ArchiveWriter.qml", { initialFiles: ["/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub"]})
-
+        //onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub", "/home/lduboeuf/.local/share/utzip.lduboeuf/choucroute"])
+        //onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz"])
     }
 }

@@ -26,5 +26,16 @@ Page {
         Label {
             text: i18n.tr("Should support archive files like zip, gzip, bzip, xz, tar, 7z")
         }
+
+        Label {
+            text: i18n.tr("Source code:") + "<a href=\"https://github.com/lduboeuf/utzipper\">https://github.com/lduboeuf/utzipper</a>"
+            onLinkActivated: Qt.openUrlExternally(link)
+            wrapMode: Label.WordWrap
+        }
+
+//        Label {
+//            text: "<a href=\"https://github.com/lduboeuf/utzipper\">https://github.com/lduboeuf/utzipper</a>"
+
+//        }
     }
 }

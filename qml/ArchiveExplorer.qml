@@ -37,8 +37,15 @@ Page {
 
     header: PageHeader {
         id: header
-        title: i18n.tr('UT zipper')
-        subtitle: archiveManager ? archiveManager.archive.replace(/^.*[\\\/]/, '') : ""
+        subtitle: i18n.tr('UT zipper')
+        //title: i18n.tr('UT zipper')
+        title: archiveManager ? archiveManager.archive.replace(/^.*[\\\/]/, '') : ""
+        leadingActionBar.actions: [
+            Action {
+                iconName: "close"
+                onTriggered: pageStack.pop()
+            }
+        ]
         trailingActionBar.actions: [
             Action {
                 iconName: "share"
@@ -118,7 +125,7 @@ Page {
         id: errorMsg
         anchors.centerIn: parent
         visible: archiveManager.error != ArchiveManager.NO_ERRORS
-        text: i18n.tr("Sorry, unsupported file format");
+        text: i18n.tr("Oups, something went wrong");
     }
 
     ListView {
