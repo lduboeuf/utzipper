@@ -24,7 +24,7 @@ import Ubuntu.Components.Popups 1.3
 import ArchiveManager 1.0
 
 MainView {
-    id: root
+    id: mainView
     objectName: 'mainView'
     applicationName: 'utzip.lduboeuf'
     automaticOrientation: true
@@ -33,6 +33,7 @@ MainView {
     height: units.gu(75)
 
     property var activeTransfer
+    property bool openArchiveRequested: false
 
     function cleanup() {
         console.log('cleanup archive');
@@ -75,11 +76,11 @@ MainView {
 
         header: PageHeader {
             id: header
-            title: i18n.tr('UT zipper')
+            title: 'UT zipper'
             trailingActionBar.actions: [
                 Action {
                     iconName: "info"
-                    text: "info"
+                    text: i18n.tr("info")
                     onTriggered: pageStack.push("qrc:/About.qml")
                 }
             ]
@@ -140,7 +141,7 @@ MainView {
 
             onPeerSelected: {
                 peer.selectionType = importPicker.newArchive ? ContentTransfer.Multiple : ContentTransfer.Single;
-                root.activeTransfer = peer.request();
+                mainView.activeTransfer = peer.request();
                 pageStack.pop()
             }
 
@@ -171,14 +172,14 @@ MainView {
                 exportPicker.selectedItems = []
                 exportPicker.files.forEach( file => {
                                   console.log('added:', file)
-                    exportPicker.selectedItems.push(resultComponent.createObject(root, {"url": "file://" + file}));
+                    exportPicker.selectedItems.push(resultComponent.createObject(mainView, {"url": "file://" + file}));
                 })
                 peer.selectionType = ContentTransfer.Single;
-                root.activeTransfer = peer.request();
-                root.activeTransfer.stateChanged.connect(function() {
-                    if (root.activeTransfer.state === ContentTransfer.InProgress) {
-                        root.activeTransfer.items = exportPicker.selectedItems;
-                        root.activeTransfer.state = ContentTransfer.Charged;
+                mainView.activeTransfer = peer.request();
+                mainView.activeTransfer.stateChanged.connect(function() {
+                    if (mainView.activeTransfer.state === ContentTransfer.InProgress) {
+                        mainView.activeTransfer.items = exportPicker.selectedItems;
+                        mainView.activeTransfer.state = ContentTransfer.Charged;
                         pageStack.pop()
                     }
                 })
@@ -208,18 +209,9 @@ MainView {
                 spacing: units.gu(2)
                 Label {
                     id: label
-                    //width: parent.width
-                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: parent.width
                     wrapMode: Label.WordWrap
-                    text: i18n.tr("Sorry, not a supported archive file")
-                }
-                Label {
-                    id: label2
-                    //anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.left: label.left
-                    //width: parent.width
-                    wrapMode: Label.WordWrap
-                    text: i18n.tr("Create an archive with:")
+                    text: i18n.tr("Would you like to create one with that files ? :")
                 }
 
                 Repeater {
@@ -227,7 +219,7 @@ MainView {
                     Label {
                         anchors.left: label.left
                         anchors.leftMargin: units.gu(1)
-                        //wrapMode: Label.WordWrap
+                        width: parent.width
                         elide: Text.ElideRight
                         font.weight: Font.Light
                         text: modelData
@@ -239,7 +231,7 @@ MainView {
                     Button {
                         text: i18n.tr("no")
                         Layout.fillWidth: true
-                        color: theme.palette.normal.focus
+                        color: theme.palette.normal.base
                         onClicked: PopupUtils.close(newArchiveDialogue)
                     }
                     Button {
@@ -259,7 +251,7 @@ MainView {
 
     ContentTransferHint {
         anchors.fill: parent
-        activeTransfer: root.activeTransfer
+        activeTransfer: mainView.activeTransfer
     }
 
     Connections {
@@ -299,8 +291,9 @@ MainView {
     }
 
     Component.onCompleted: {
+
         //console.log(archiveManager.isArchiveFile('/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'));
-        //onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub", "/home/lduboeuf/.local/share/utzip.lduboeuf/choucroute"])
+        //onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub", "/home/lduboeuf/.local/share/utzip.lduboeuf/choucrofzjefpzoejfjzejpozemzpef_vdsvjjvjvjjjpojezopute"])
         //onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz"])
     }
 }

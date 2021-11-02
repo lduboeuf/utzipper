@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-10-30 19:57+0000\n"
+"POT-Creation-Date: 2021-11-02 08:09+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,13 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../qml/About.qml:11 ../qml/ArchiveExplorer.qml:40
-#: ../qml/ArchiveWriter.qml:32 ../qml/Main.qml:78 utzip.desktop.in.h:1
-msgid "UT zipper"
+#: ../qml/About.qml:11
+msgid "About"
 msgstr ""
 
 #: ../qml/About.qml:23
-msgid "Archive Reader/Writer"
+msgid "Archive Reader - Writer"
 msgstr ""
 
 #: ../qml/About.qml:27
@@ -54,74 +53,74 @@ msgstr ""
 msgid "Export archive"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:194
-msgid "Archive name"
+#: ../qml/ArchiveWriter.qml:195
+msgid "my archive name"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:201
-msgid "new archive..."
+#: ../qml/ArchiveWriter.qml:205
+msgid "format"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:209
-msgid "Archive format"
-msgstr ""
-
-#: ../qml/ArchiveWriter.qml:216
+#: ../qml/ArchiveWriter.qml:212
 msgid "cancel"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:222
+#: ../qml/ArchiveWriter.qml:219
 msgid "save"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:241
+#: ../qml/ArchiveWriter.qml:237
 msgid "Add folder"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:247
+#: ../qml/ArchiveWriter.qml:243
 msgid "Folder name"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:254
+#: ../qml/ArchiveWriter.qml:250
 msgid "new folder..."
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:259
+#: ../qml/ArchiveWriter.qml:255
 msgid "ok"
 msgstr ""
 
-#: ../qml/Main.qml:96
+#: ../qml/Main.qml:83
+msgid "info"
+msgstr ""
+
+#: ../qml/Main.qml:97
 msgid "Open archive"
 msgstr ""
 
-#: ../qml/Main.qml:112
+#: ../qml/Main.qml:113
 msgid "Create archive"
 msgstr ""
 
-#: ../qml/Main.qml:130
+#: ../qml/Main.qml:131
 msgid "Choose from"
 msgstr ""
 
-#: ../qml/Main.qml:156
+#: ../qml/Main.qml:157
 msgid "Export to"
 msgstr ""
 
-#: ../qml/Main.qml:200
+#: ../qml/Main.qml:201
 msgid "Unsupported archive format"
 msgstr ""
 
 #: ../qml/Main.qml:214
-msgid "Sorry, not a supported archive file"
+msgid "Would you like to create one with that files ? :"
 msgstr ""
 
-#: ../qml/Main.qml:222
-msgid "Create an archive with:"
-msgstr ""
-
-#: ../qml/Main.qml:240
+#: ../qml/Main.qml:232
 msgid "no"
 msgstr ""
 
-#: ../qml/Main.qml:246
+#: ../qml/Main.qml:238
 msgid "yes"
+msgstr ""
+
+#: utzip.desktop.in.h:1
+msgid "UT zipper"
 msgstr ""

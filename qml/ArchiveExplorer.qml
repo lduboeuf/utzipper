@@ -37,7 +37,7 @@ Page {
 
     header: PageHeader {
         id: header
-        subtitle: i18n.tr('UT zipper')
+        subtitle: 'UT zipper'
         //title: i18n.tr('UT zipper')
         title: archiveManager ? archiveManager.archive.replace(/^.*[\\\/]/, '') : ""
         leadingActionBar.actions: [

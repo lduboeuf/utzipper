@@ -29,7 +29,7 @@ Page {
 
     header: PageHeader {
         id: header
-        subtitle: i18n.tr('UT zipper')
+        subtitle: 'UT zipper'
         title: i18n.tr("new Archive")
         leadingActionBar.actions: [
             Action {
@@ -189,24 +189,20 @@ Page {
 
             Column {
                 spacing: units.gu(2)
-                Label {
-                    id: label
-                    text: i18n.tr("Archive name")
-                    elide: Text.ElideRight
-                    font.weight: Font.Light
-                }
 
                 TextField {
                     id: nametxt
-                    placeholderText: i18n.tr("new archive...")
+                    placeholderText: i18n.tr("my archive name")
                     Layout.fillWidth: true
                     focus: true
+                    Keys.onReturnPressed: saveBtn.clicked()
+                    inputMethodHints: Qt.ImhUrlCharactersOnly
                 }
 
                 OptionSelector {
                     id: formatList
                     Layout.fillWidth: true
-                    text: i18n.tr("Archive format")
+                    text: i18n.tr("format")
                     model: ["zip", "tar", "tar.gz", "tar.bz2", "tar.xz","7z"]
                 }
 
@@ -215,10 +211,11 @@ Page {
                     Button {
                         text: i18n.tr("cancel")
                         Layout.fillWidth: true
-                        color: theme.palette.normal.focus
+                        color: theme.palette.normal.base
                         onClicked: PopupUtils.close(dialogue)
                     }
                     Button {
+                        id: saveBtn
                         text: i18n.tr("save")
                         Layout.fillWidth: true
                         color: theme.palette.normal.positive
@@ -226,13 +223,12 @@ Page {
                         onClicked: {
                             root.save(nametxt.displayText, formatList.model[formatList.selectedIndex]);
                             PopupUtils.close(dialogue)
-                        }
+                        }  
                     }
                 }
             }
         }
     }
-
 
     Component {
         id: addFolderDialog

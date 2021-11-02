@@ -8,7 +8,8 @@ Page {
 
     header: PageHeader {
         id: header
-        title: i18n.tr('UT zipper')
+        title: i18n.tr('About')
+        subtitle: "UT Zipper"
     }
 
 
@@ -17,10 +18,9 @@ Page {
         spacing: units.gu(3)
 
         Label {
-            //TODO size
             fontSize: "large"
             anchors.horizontalCenter: parent.horizontalCenter
-            text: i18n.tr("Archive Reader/Writer")
+            text: i18n.tr("Archive Reader - Writer")
         }
 
         Label {
@@ -32,10 +32,5 @@ Page {
             onLinkActivated: Qt.openUrlExternally(link)
             wrapMode: Label.WordWrap
         }
-
-//        Label {
-//            text: "<a href=\"https://github.com/lduboeuf/utzipper\">https://github.com/lduboeuf/utzipper</a>"
-
-//        }
     }
 }
