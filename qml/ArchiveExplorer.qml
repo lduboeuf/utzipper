@@ -10,14 +10,14 @@ Page {
     anchors.fill: parent
     objectName: "ArchiveReader"
 
-    property ArchiveManager archiveManager: null
     property var navigation: []
+    property string archive: ""
 
     function selectAll() {
         const currentIndices = listView.ViewItems.selectedIndices
         let nextIndices = []
-        for (let i=0; i < archiveManager.rowCount(); i++) {
-            if (!archiveManager.get(i).isDir) {
+        for (let i=0; i < archiveReader.rowCount(); i++) {
+            if (!archiveReader.get(i).isDir) {
                 nextIndices.push(i)
             }
         }
@@ -30,16 +30,15 @@ Page {
 
     function share() {
         const selectedFiles = listView.ViewItems.selectedIndices
-        const files = selectedFiles.map(idx => archiveManager.get(idx).fullPath);
-        const outFiles = archiveManager.extractFiles(files);
+        const files = selectedFiles.map(idx => archiveReader.get(idx).fullPath);
+        const outFiles = ArchiveManager.extractFiles(archiveReader.archive, files);
         pageStack.push(exportPicker, { files: outFiles })
     }
 
     header: PageHeader {
         id: header
         subtitle: 'UT zipper'
-        //title: i18n.tr('UT zipper')
-        title: archiveManager ? archiveManager.archive.replace(/^.*[\\\/]/, '') : ""
+        title: archiveReader ? archiveReader.archive.replace(/^.*[\\\/]/, '') : ""
         leadingActionBar.actions: [
             Action {
                 iconName: "close"
@@ -55,9 +54,7 @@ Page {
             Action {
                 iconName: "edit"
                 onTriggered:  {
-
-                    //pageStack.pop()
-                    pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager, archive: archiveManager.archive});
+                    pageStack.push("qrc:/ArchiveWriter.qml", { archive: archiveReader.archive});
                 }
             }
         ]
@@ -77,13 +74,13 @@ Page {
                 Action {
                     iconName: "keyboard-caps-disabled"
                     text: "up"
-                    enabled: archiveManager.currentDir !== ""
-                    onTriggered: archiveManager.currentDir = root.navigation.pop()
+                    enabled: archiveReader.currentDir !== ""
+                    onTriggered: archiveReader.currentDir = root.navigation.pop()
                 },
                 Action {
                     iconName: "go-home"
                     text: "home"
-                    onTriggered: archiveManager.currentDir = ""
+                    onTriggered: archiveReader.currentDir = ""
                 }
             ]
 
@@ -121,7 +118,7 @@ Page {
                     Action {
                         iconName: "select"
                         text: "select all"
-                        enabled: archiveManager.hasFiles
+                        enabled: archiveReader.hasFiles
                         onTriggered: selectAll()
                     }
                 ]
@@ -129,10 +126,15 @@ Page {
         }
     }
 
+    ArchiveReader {
+        id: archiveReader
+        archive: root.archive
+    }
+
     Label {
         id: errorMsg
         anchors.centerIn: parent
-        visible: archiveManager.error != ArchiveManager.NO_ERRORS
+        visible: archiveReader.error != ArchiveReader.NO_ERRORS
         text: i18n.tr("Oups, something went wrong");
     }
 
@@ -144,7 +146,7 @@ Page {
             left: parent.left
             right: parent.right
         }
-        model: archiveManager
+        model: archiveReader
         delegate: ListItem {
             height: layout.height + (divider.visible ? divider.height : 0)
             color:  selected ? theme.palette.selected.foreground : "transparent"
@@ -152,7 +154,7 @@ Page {
                 id: layout
                 title.text: name
                 Icon {
-                    name: isDir ? "document-open" : "stock_document"
+                    name: isDir ? "document-open" : ArchiveManager.iconName(model.name)
                     SlotsLayout.position: SlotsLayout.Leading
                     width: units.gu(2)
                 }
@@ -161,11 +163,11 @@ Page {
                 if (!isDir) {
                     selected = !selected
                 } else {
-                    root.navigation.push(archiveManager.currentDir)
-                    if (archiveManager.currentDir !== "") {
-                        archiveManager.currentDir = archiveManager.currentDir + "/" + name
+                    root.navigation.push(archiveReader.currentDir)
+                    if (archiveReader.currentDir !== "") {
+                        archiveReader.currentDir = archiveReader.currentDir + "/" + name
                     } else {
-                        archiveManager.currentDir = name
+                        archiveReader.currentDir = name
                     }
 
                 }
@@ -174,7 +176,7 @@ Page {
     }
 
     Connections {
-        target: archiveManager
+        target: archiveReader
 
         onCurrentDirChanged: {
             listView.ViewItems.selectedIndices = []

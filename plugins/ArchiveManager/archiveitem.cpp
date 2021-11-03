@@ -20,3 +20,4 @@ void ArchiveItem::setFullPath(const QString &fullPath)
 {
     mFullPath = fullPath;
 }
+

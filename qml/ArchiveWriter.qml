@@ -12,15 +12,13 @@ Page {
     anchors.fill: parent
     objectName: "ArchiveWriter"
 
-    property ArchiveManager archiveManager: null
     property string archive: null
     property var navigation: []
 
     function save(archiveName, suffix) {
 
         const name = archiveName.replace(/[\s\?\[\]\/\\=<>:;,\'"&\$#*()|~`!{}%+]+/gi, '_');
-        console.log('name:', name)
-        const archivePath = archiveManager.save(name, suffix)
+        const archivePath = ArchiveManager.save(name, suffix)
         if (archivePath !== "") {
             pageStack.push(exportPicker, { files: [archivePath]})
         } else {
@@ -38,7 +36,7 @@ Page {
                 iconName: "close"
                 onTriggered: {
                     pageStack.pop()
-                    archiveManager.currentDir = ""
+                    ArchiveManager.currentDir = ""
                 }
             }
         ]
@@ -53,7 +51,6 @@ Page {
             ActionBar {
 
             id: actionBar
-            //numberOfSlots: 2
 
             anchors {
                 left: parent.left
@@ -64,15 +61,15 @@ Page {
             actions: [
                 Action {
                     iconName: "keyboard-caps-disabled"
-                    text: archiveManager.currentDir
-                    visible: archiveManager.currentDir !== ""
-                    onTriggered: archiveManager.currentDir = root.navigation.pop()
+                    text: ArchiveManager.currentDir
+                    visible: ArchiveManager.currentDir !== ""
+                    onTriggered: ArchiveManager.currentDir = root.navigation.pop()
                 },
                 Action {
                     iconName: "go-home"
                     text: i18n.tr("home")
                     onTriggered: {
-                        archiveManager.currentDir = ""
+                        ArchiveManager.currentDir = ""
                         root.navigation = []
                     }
                 }
@@ -126,16 +123,10 @@ Page {
 
     FolderListModel {
         id: folderModel
-        rootFolder: "file://" + archiveManager.newArchiveDir
-        folder: "file://" +  archiveManager.newArchiveDir + "/" + archiveManager.currentDir
-        onFolderChanged: {
-            console.log('kikou folderModel', folder)
-        }
+        rootFolder: "file://" + ArchiveManager.newArchiveDir
+        folder: "file://" +  ArchiveManager.newArchiveDir + "/" + ArchiveManager.currentDir
         showDirsFirst: true
         showHidden: true
-        Component.onCompleted: {
-            console.log('folder', folder, 'rootFolder:', rootFolder)
-        }
     }
 
     ListView {
@@ -154,13 +145,12 @@ Page {
             id: delegate
             height: layout.height + (divider.visible ? divider.height : 0)
             color:  index === listView.currentIndex ? theme.palette.selected.foreground : "transparent"
-            //highlightColor: "blue"
             ListItemLayout {
                 id: layout
                 title.text: fileName
 
                 Icon {
-                    name: fileIsDir ? "document-open" : "stock_document"
+                    name: fileIsDir ? "document-open" : ArchiveManager.iconName(fileName)
                     SlotsLayout.position: SlotsLayout.Leading
                     width: units.gu(2)
                 }
@@ -174,10 +164,10 @@ Page {
                         onTriggered: {
                             const parentFolder = String(folderModel.folder).replace('file://', '')
                             if (fileIsDir) {
-                                archiveManager.removeFolder(fileName, parentFolder)
-                                archiveManager.currentDir = root.navigation.pop()
+                                ArchiveManager.removeFolder(fileName, parentFolder)
+                                ArchiveManager.currentDir = root.navigation.pop()
                             }else {
-                                archiveManager.removeFile(fileName, parentFolder)
+                                ArchiveManager.removeFile(fileName, parentFolder)
                             }
                         }
                     }
@@ -186,13 +176,13 @@ Page {
             onClicked:  {
                 if (fileIsDir) {
                     let tmpNav = root.navigation
-                    tmpNav.push(archiveManager.currentDir)
+                    tmpNav.push(ArchiveManager.currentDir)
                     root.navigation = tmpNav
 
-                    if (archiveManager.currentDir !== "") {
-                        archiveManager.currentDir = archiveManager.currentDir + "/" + fileName
+                    if (ArchiveManager.currentDir !== "") {
+                        ArchiveManager.currentDir = ArchiveManager.currentDir + "/" + fileName
                     } else {
-                        archiveManager.currentDir = fileName
+                        ArchiveManager.currentDir = fileName
                     }
 
                 }
@@ -203,26 +193,17 @@ Page {
         }
 
         ViewItems.onDragUpdated: {
-            if (event.status == ListItemDrag.Started) {
-                console.log("from:", event.from)
+            if (event.status === ListItemDrag.Started) {
                 listView.draggedIndex = event.from
-            } else if (event.status == ListItemDrag.Moving) {
-                //console.log('event moving', event.from, event.to)
+            } else if (event.status === ListItemDrag.Moving) {
                 const idx = event.to
-                console.log("currentInde", listView.currentIndex, event.to)
                 if (folderModel.get(event.to, "fileIsDir")) {
-                    //listView.children[event.to].selected = true
                     listView.currentIndex = event.to
-                    //listView.currentIndex = event.to
                 }
 
-
-            } else if (event.status == ListItemDrag.Dropped) {
-                console.log('event from', draggedIndex, event.to)
-                archiveManager.move(folderModel.get(draggedIndex, "fileURL"), folderModel.get(event.to, "fileURL"))
+            } else if (event.status === ListItemDrag.Dropped) {
+                ArchiveManager.move(folderModel.get(draggedIndex, "fileURL"), folderModel.get(event.to, "fileURL"))
                 listView.currentIndex = -1
-
-                //model.move(event.from, event.to, 1);
             }
         }
 
@@ -237,7 +218,7 @@ Page {
     Label {
         id: errorMsg
         anchors.centerIn: parent
-        visible: archiveManager.error != ArchiveManager.NO_ERRORS
+        visible: ArchiveManager.error != ArchiveManager.NO_ERRORS
         text: i18n.tr("Oups, something went wrong");
     }
 
@@ -360,7 +341,7 @@ Page {
                         color: theme.palette.normal.positive
                         enabled: folderNametxt.inputMethodComposing || folderNametxt.displayText.length > 0
                         onClicked: {
-                            const ok = archiveManager.appendFolder(folderNametxt.displayText, archiveManager.currentDir)
+                            const ok = ArchiveManager.appendFolder(folderNametxt.displayText, ArchiveManager.currentDir)
                             if (ok) {
                                 PopupUtils.close(addFolderDialogue)
                             }
@@ -374,7 +355,7 @@ Page {
 
     Component.onCompleted: {
         if (root.archive) {
-            archiveManager.extractTo(root.archive, archiveManager.newArchiveDir)
+            ArchiveManager.extractTo(root.archive, ArchiveManager.newArchiveDir)
         }
     }
 
