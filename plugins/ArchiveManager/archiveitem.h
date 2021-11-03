@@ -11,6 +11,7 @@ public:
      QString name() const;
      bool isDir() const;
      QString fullPath() const;
+     void setFullPath(const QString &fullPath);
 
 private:
     QString mName;

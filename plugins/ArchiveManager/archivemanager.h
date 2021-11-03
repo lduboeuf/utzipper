@@ -33,6 +33,7 @@ class ArchiveManager: public QAbstractListModel {
     Q_PROPERTY(bool hasFiles READ hasFiles NOTIFY hasFilesChanged)
     Q_PROPERTY(Errors error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString tempDir READ tempDir NOTIFY tempDirChanged)
+    Q_PROPERTY(QString newArchiveDir READ newArchiveDir NOTIFY newArchiveDirChanged)
 
 public:
     ArchiveManager(QObject *parent = 0);
@@ -65,18 +66,21 @@ public:
     QString currentDir() const;
     QString tempDir() const;
     void setCurrentDir(const QString &currentDir);
+    QString newArchiveDir() const;
+    void setNewArchiveDir(const QString &path);
     Errors error() const;
 
     Q_INVOKABLE void clear();
     Q_INVOKABLE bool hasData() const;
     Q_INVOKABLE QStringList extractFiles(const QStringList &files);
+    Q_INVOKABLE void extractArchiveLocally();
     Q_INVOKABLE QVariantMap get(int index) const;
     Q_INVOKABLE bool isArchiveFile(const QString &path);
-    Q_INVOKABLE void appendFile(const QString &filePath, const QString &parentFolder);
-    Q_INVOKABLE void removeFile(const QString &name, const QString &parentFolder);
-    Q_INVOKABLE void appendFolder(const QString &name, const QString &parentFolder);
-    Q_INVOKABLE void removeFolder(const QString &name, const QString &parentFolder);
+    Q_INVOKABLE bool removeFile(const QString &name, const QString &parentFolder);
+    Q_INVOKABLE bool appendFolder(const QString &name, const QString &parentFolder);
+    Q_INVOKABLE bool removeFolder(const QString &name, const QString &parentFolder);
     Q_INVOKABLE QString save(const QString &archiveName, const QString &suffix);
+    Q_INVOKABLE bool move(const QUrl &sourcePath, const QUrl &destination);
 
 
 Q_SIGNALS:
@@ -88,6 +92,7 @@ Q_SIGNALS:
     void hasFilesChanged();
     void nameChanged();
     void tempDirChanged();
+    void newArchiveDirChanged();
 
 protected Q_SLOTS:
     void extract();
@@ -99,6 +104,7 @@ private:
     QString mArchive;
     QString mName;
     QString mTempDir;
+    QString mNewArchiveDir;
     bool mHasFiles;
     //KArchive* mArchivePtr;
     Errors mError;
@@ -108,6 +114,7 @@ private:
     QString mimeType( const QString &filePath ) const;
     KArchive* getKArchiveObject(const QString &filePath);
 
+    void cleanDirectory(const QString &path);
     void setTempDir(const QString &path);
     void extractArchive(const KArchiveDirectory *dir, const QString &path);
 };

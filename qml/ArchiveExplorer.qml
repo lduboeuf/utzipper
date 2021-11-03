@@ -51,6 +51,14 @@ Page {
                 iconName: "share"
                 enabled: listView.ViewItems.selectedIndices.length > 0
                 onTriggered: share()
+            },
+            Action {
+                iconName: "edit"
+                onTriggered:  {
+                    archiveManager.extractArchiveLocally()
+                    //pageStack.pop()
+                    pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
+                }
             }
         ]
         extension:

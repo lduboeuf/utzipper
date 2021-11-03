@@ -40,29 +40,17 @@ MainView {
         archiveManager.clear();
     }
 
-    function onImportedFiles(files) {
-
-        // we can only address one zip file at once
-        if (archiveManager.isArchiveFile(files[0])) {
-            archiveManager.archive = files[0];
-            pageStack.push("qrc:/ArchiveExplorer.qml", { archiveManager: archiveManager});
-        } else {
-            if (pageStack.currentPage.objectName !== "ArchiveWriter") {
-                // we need to ask
-                const names = files.map( file => file.replace(/^.*[\\\/]/, ''))
-                const popup = PopupUtils.open(newArchiveDialog, undefined, { "files": names });
-                popup.confirmed.connect(function() {
-                    if (pageStack.depth > 1) {
-                        pageStack.pop();
-                    }
-                    files.forEach( file => archiveManager.appendFile(file, archiveManager.currentDir));
-                    pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager})
-                });
-            } else {
-                // otherwise just add to the existing archive
-                files.forEach( file => archiveManager.appendFile(file, archiveManager.currentDir));
+    function moveFiles(transfer, destinationDir) {
+        var files = [];
+        for (let i=0; i < transfer.items.length; i++) {
+            const item = transfer.items[i];
+            if (item.move(destinationDir)){
+                files.push(String(item.url).replace('file://', ''));
             }
         }
+
+        transfer.finalize();
+        return files;
     }
 
     ArchiveManager {
@@ -211,19 +199,7 @@ MainView {
                     id: label
                     width: parent.width
                     wrapMode: Label.WordWrap
-                    text: i18n.tr("Would you like to create one with that files ? :")
-                }
-
-                Repeater {
-                    model: newArchiveDialogue.files
-                    Label {
-                        anchors.left: label.left
-                        anchors.leftMargin: units.gu(1)
-                        width: parent.width
-                        elide: Text.ElideRight
-                        font.weight: Font.Light
-                        text: modelData
-                    }
+                    text: i18n.tr("Would you like to create one with that file(s) ?")
                 }
 
                 RowLayout {
@@ -261,22 +237,31 @@ MainView {
         onImportRequested: {
             if (transfer.state === ContentTransfer.Charged) {
 
-                if (pageStack.currentPage.objectName !== "ArchiveWriter") {
+                let destinationDir = archiveManager.tempDir;
+                if (pageStack.currentPage.objectName === "ArchiveWriter") {
+                    destinationDir = archiveManager.newArchiveDir + "/" + archiveManager.currentDir;
+                    moveFiles(transfer, destinationDir)
+                } else {
                     cleanup();
                     if (pageStack.depth > 1) {
                         pageStack.pop();
                     }
-                }
+                    if (!archiveManager.isArchiveFile(String(transfer.items[0].url))){
+                        destinationDir = archiveManager.newArchiveDir + "/" + archiveManager.currentDir;
+                        const popup = PopupUtils.open(newArchiveDialog, undefined, { "files": [] });
+                        popup.confirmed.connect(function() {
+                            moveFiles(transfer, destinationDir)
+                            pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager})
+                        });
 
-                var files = [];
-                for (let i=0; i < transfer.items.length; i++) {
-                    const item = transfer.items[i];
-                    if (item.move(archiveManager.tempDir)){
-                        files.push(String(item.url).replace('file://', ''));
+                    } else {
+                        const files = moveFiles(transfer, destinationDir)
+                        archiveManager.archive = files[0];
+                        pageStack.push("qrc:/ArchiveExplorer.qml", { archiveManager: archiveManager});
                     }
                 }
-                transfer.finalize();
-                onImportedFiles(files)
+            } else if (transfer.state === ContentTransfer.Finalized) {
+                console.log('ContentTransfer.Finalize');
 
             }
         }
@@ -293,7 +278,7 @@ MainView {
     Component.onCompleted: {
 
         //console.log(archiveManager.isArchiveFile('/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'));
-        //onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub", "/home/lduboeuf/.local/share/utzip.lduboeuf/choucrofzjefpzoejfjzejpozemzpef_vdsvjjvjvjjjpojezopute"])
+        //onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub"])
         //onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz"])
     }
 }

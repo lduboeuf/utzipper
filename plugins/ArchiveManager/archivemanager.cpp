@@ -37,10 +37,14 @@ ArchiveManager::ArchiveManager(QObject *parent) : QAbstractListModel(parent), mE
     archiveMimeTypes.insert("tar", { "application/x-compressed-tar", "application/x-bzip-compressed-tar", "application/x-lzma-compressed-tar", "application/x-xz-compressed-tar", "application/x-gzip", "application/x-bzip", "application/x-lzma", "application/x-xz" });
     archiveMimeTypes.insert("7z", { "application/x-7z-compressed" });
 
-    // working directory
-    QString output = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/imports";
+    // working directory for new archives
+    QString output = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/newArchive";
     QDir().mkdir(output);
-    setTempDir(output);
+    setNewArchiveDir(output);
+
+    // temp dir
+    QString tmpDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+    setTempDir(tmpDir);
 }
 
 ArchiveManager::~ArchiveManager()
@@ -81,6 +85,15 @@ QString ArchiveManager::tempDir() const
     return mTempDir;
 }
 
+void ArchiveManager::setTempDir(const QString &path)
+{
+    if (mTempDir != path) {
+        mTempDir = path;
+        qDebug() << "tempDir" << path;
+        Q_EMIT tempDirChanged();
+    }
+}
+
 void ArchiveManager::setCurrentDir(const QString &currentDir)
 {
 //    if (mCurrentDir == currentDir) {
@@ -96,6 +109,20 @@ void ArchiveManager::setCurrentDir(const QString &currentDir)
     endResetModel();
 
     Q_EMIT rowCountChanged();
+}
+
+QString ArchiveManager::newArchiveDir() const
+{
+    return mNewArchiveDir;
+}
+
+void ArchiveManager::setNewArchiveDir(const QString &path)
+{
+    if (mNewArchiveDir != path) {
+        mNewArchiveDir = path;
+        qDebug() << "tempDir" << path;
+        Q_EMIT newArchiveDirChanged();
+    }
 }
 
 ArchiveManager::Errors ArchiveManager::error() const
@@ -114,18 +141,9 @@ void ArchiveManager::clear()
     endResetModel();
 
     //clean up temp dir
-    QString output = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-    QDir dir(output);
-    dir.setFilter( QDir::NoDotAndDotDot | QDir::Files );
-    foreach( QString dirItem, dir.entryList() )
-        dir.remove( dirItem );
-
-    dir.setFilter( QDir::NoDotAndDotDot | QDir::Dirs );
-    foreach( QString dirItem, dir.entryList() )
-    {
-        QDir subDir( dir.absoluteFilePath( dirItem ) );
-        subDir.removeRecursively();
-    }
+    cleanDirectory(mTempDir);
+    //clean new archive dir
+    cleanDirectory(mNewArchiveDir);
 
     Q_EMIT rowCountChanged();
 }
@@ -142,9 +160,9 @@ QStringList ArchiveManager::extractFiles(const QStringList &files)
     if (!mArchivePtr) {
         return outFiles;
     }
-    //TODO ensure clean dir
+
     QString output = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-    qDebug() << "tmp-dir:" << output;
+
     const KArchiveDirectory *rootDir = mArchivePtr->directory();
     foreach(QString path, files)
     {
@@ -158,6 +176,24 @@ QStringList ArchiveManager::extractFiles(const QStringList &files)
     mArchivePtr->close();
 
     return outFiles;
+}
+
+/**
+ * Extract the archive in the local temp folder
+ */
+void ArchiveManager::extractArchiveLocally()
+{
+    KArchive *mArchivePtr = getKArchiveObject(mArchive);
+    if (!mArchivePtr) {
+        return;
+    }
+
+    const KArchiveDirectory *rootDir = mArchivePtr->directory();
+    rootDir->copyTo(mNewArchiveDir, true);
+    mArchivePtr->close();
+
+    Q_EMIT modelChanged();
+    setCurrentDir("");
 }
 
 bool ArchiveManager::isArchiveFile(const QString &path)
@@ -174,63 +210,25 @@ bool ArchiveManager::isArchiveFile(const QString &path)
     return false;
 }
 
-void ArchiveManager::appendFile(const QString &filePath, const QString &parentFolder)
+bool ArchiveManager::removeFile(const QString &name, const QString &parentFolder)
 {
 
-    QFileInfo file(filePath);
-
-    bool exist = mArchiveItems.contains(parentFolder);
-    if (!exist) {
-        mArchiveItems.insert(parentFolder, QList<ArchiveItem>());
-    }
-
-    ArchiveItem item(file.fileName(), false, file.absoluteFilePath());
-
-    mArchiveItems[parentFolder] << item;
-    setCurrentDir(parentFolder);
+    QFile fileToRemove(parentFolder + "/" + name);
+    return fileToRemove.remove();
 }
 
-void ArchiveManager::removeFile(const QString &name, const QString &parentFolder)
+bool ArchiveManager::appendFolder(const QString &name, const QString &parentFolder)
 {
-    bool exist = mArchiveItems.contains(parentFolder);
-    if (exist) {
-        QMutableListIterator<ArchiveItem> iter(mArchiveItems[parentFolder]);
-        while (iter.hasNext()) {
-            if (iter.next().name() == name) {
-                iter.remove();
-            }
-        }
-        setCurrentDir(parentFolder);
-    }
+
+        const QString key = parentFolder.isEmpty() ? name : parentFolder + "/" + name;
+        qDebug() << "new folder:" << mNewArchiveDir + "/" + key;
+        return QDir().mkdir(mNewArchiveDir + "/" + key);
 }
 
-void ArchiveManager::appendFolder(const QString &name, const QString &parentFolder)
+bool ArchiveManager::removeFolder(const QString &name, const QString &parentFolder)
 {
-    bool exist = mArchiveItems.contains(name);
-    if (!exist) {
-        const QString key = parentFolder.isEmpty() ? name : name + "/" + parentFolder;
-        mArchiveItems.insert(key, QList<ArchiveItem>());
-        ArchiveItem item(name, true, key);
-        mArchiveItems[parentFolder] << item;
-        setCurrentDir(parentFolder);
-    }
-}
-
-void ArchiveManager::removeFolder(const QString &name, const QString &parentFolder)
-{
-    bool exist = mArchiveItems.contains(parentFolder);
-    if (exist) {
-        QMutableListIterator<ArchiveItem> iter(mArchiveItems[parentFolder]);
-        while (iter.hasNext()) {
-            ArchiveItem item = iter.next();
-            if (item.name() == name && item.isDir()) {
-                iter.remove();
-            }
-        }
-        const QString key = parentFolder.isEmpty() ? name : name + "/" + parentFolder;
-        mArchiveItems.remove(key);
-        setCurrentDir(parentFolder);
-    }
+    QDir folder(parentFolder + "/" + name);
+    return folder.removeRecursively();
 }
 
 QString ArchiveManager::save(const QString &archiveName, const QString &suffix)
@@ -257,26 +255,42 @@ QString ArchiveManager::save(const QString &archiveName, const QString &suffix)
         return "";
     }
 
-    QMapIterator<QString, QList<ArchiveItem>> iter(mArchiveItems);
-    while (iter.hasNext()) {
-        iter.next();
-
-        foreach (ArchiveItem item, iter.value()) {
-            if (item.isDir()) {
-                mArchivePtr->addLocalDirectory(item.fullPath(), item.name());
-            } else {
-                mArchivePtr->addLocalFile(item.fullPath(), item.name());
-            }
+    QDir dir(mNewArchiveDir);
+    dir.setFilter( QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot );
+    foreach(const QFileInfo dirItem, dir.entryInfoList() ) {
+        qDebug() << "add file:" << dirItem.absoluteFilePath() << dirItem.fileName();
+        if (dirItem.isDir()) {
+            mArchivePtr->addLocalDirectory(dirItem.absoluteFilePath(), dirItem.fileName());
+        } else {
+            mArchivePtr->addLocalFile(dirItem.absoluteFilePath(),dirItem.fileName());
         }
     }
+
     mArchivePtr->close();
     qDebug() << "archive copied to:" << output;
 
     return output;
 }
 
+bool ArchiveManager::move(const QUrl &sourcePath, const QUrl &destination)
+{
+    if (!sourcePath.isValid() || !destination.isValid()) {
+        return false;
+    }
+    qDebug() << "rename " << sourcePath.toLocalFile() << "to" << destination.toLocalFile()+ "   /" + sourcePath.fileName();
+    return QFile::rename(sourcePath.toLocalFile(), destination.toLocalFile() + "/" + sourcePath.fileName());
+
+//    QFileInfo source(sourcePath.toLocalFile());
+//    if (source.isDir()) {
+
+
+ //   }
+}
+
 QString ArchiveManager::mimeType( const QString &filePath ) const{
-    return QMimeDatabase().mimeTypeForFile(filePath).name();
+    QMimeType mimeType = QMimeDatabase().mimeTypeForFile(filePath);
+    qDebug() << "mimeType:" << mimeType.iconName() << mimeType.genericIconName();
+    return mimeType.name();
 }
 
 KArchive *ArchiveManager::getKArchiveObject(const QString &filePath)
@@ -320,13 +334,23 @@ KArchive *ArchiveManager::getKArchiveObject(const QString &filePath)
     return kArch;
 }
 
-void ArchiveManager::setTempDir(const QString &path)
+void ArchiveManager::cleanDirectory(const QString &path)
 {
-    if (mTempDir != path) {
-        mTempDir = path;
-        Q_EMIT tempDirChanged();
+
+    QDir dir(path);
+    dir.setFilter( QDir::NoDotAndDotDot | QDir::Files );
+    foreach( QString dirItem, dir.entryList() )
+        dir.remove( dirItem );
+
+    dir.setFilter( QDir::NoDotAndDotDot | QDir::Dirs );
+    foreach( QString dirItem, dir.entryList() )
+    {
+        QDir subDir( dir.absoluteFilePath( dirItem ) );
+        subDir.removeRecursively();
     }
 }
+
+
 
 void ArchiveManager::extract()
 {
