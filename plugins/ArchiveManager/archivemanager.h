@@ -73,7 +73,7 @@ public:
     Q_INVOKABLE void clear();
     Q_INVOKABLE bool hasData() const;
     Q_INVOKABLE QStringList extractFiles(const QStringList &files);
-    Q_INVOKABLE void extractArchiveLocally();
+    Q_INVOKABLE void extractTo(const QString &archive, const QString &path);
     Q_INVOKABLE QVariantMap get(int index) const;
     Q_INVOKABLE bool isArchiveFile(const QString &path);
     Q_INVOKABLE bool removeFile(const QString &name, const QString &parentFolder);

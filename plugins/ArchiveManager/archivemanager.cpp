@@ -181,15 +181,15 @@ QStringList ArchiveManager::extractFiles(const QStringList &files)
 /**
  * Extract the archive in the local temp folder
  */
-void ArchiveManager::extractArchiveLocally()
+void ArchiveManager::extractTo(const QString &archive, const QString &path)
 {
-    KArchive *mArchivePtr = getKArchiveObject(mArchive);
+    KArchive *mArchivePtr = getKArchiveObject(archive);
     if (!mArchivePtr) {
         return;
     }
 
     const KArchiveDirectory *rootDir = mArchivePtr->directory();
-    rootDir->copyTo(mNewArchiveDir, true);
+    rootDir->copyTo(path, true);
     mArchivePtr->close();
 
     Q_EMIT modelChanged();
@@ -338,7 +338,7 @@ void ArchiveManager::cleanDirectory(const QString &path)
 {
 
     QDir dir(path);
-    dir.setFilter( QDir::NoDotAndDotDot | QDir::Files );
+    dir.setFilter( QDir::NoDotAndDotDot | QDir::Files | QDir::Hidden );
     foreach( QString dirItem, dir.entryList() )
         dir.remove( dirItem );
 

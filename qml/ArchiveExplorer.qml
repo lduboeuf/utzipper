@@ -55,9 +55,9 @@ Page {
             Action {
                 iconName: "edit"
                 onTriggered:  {
-                    archiveManager.extractArchiveLocally()
+
                     //pageStack.pop()
-                    pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
+                    pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager, archive: archiveManager.archive});
                 }
             }
         ]

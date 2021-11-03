@@ -13,6 +13,7 @@ Page {
     objectName: "ArchiveWriter"
 
     property ArchiveManager archiveManager: null
+    property string archive: null
     property var navigation: []
 
     function save(archiveName, suffix) {
@@ -368,6 +369,12 @@ Page {
                     }
                 }
             }
+        }
+    }
+
+    Component.onCompleted: {
+        if (root.archive) {
+            archiveManager.extractTo(root.archive, archiveManager.newArchiveDir)
         }
     }
 
