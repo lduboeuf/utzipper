@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021  Your FullName
+ * Copyright (C) 2021  Lionel Duboeuf
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

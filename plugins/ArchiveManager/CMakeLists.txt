@@ -6,6 +6,7 @@ set(
     plugin.cpp
     archiveitem.cpp
     archivemanager.cpp
+    archivereader.cpp
 )
 
 set(CMAKE_AUTOMOC ON)

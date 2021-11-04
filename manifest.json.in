@@ -10,7 +10,7 @@
             "content-hub": "utzip-contenthub.json"
         }
     },
-    "version": "2.1.0",
+    "version": "2.5.0",
     "maintainer": "Lionel Duboeuf <lduboeuf@ouvaton.org>",
     "framework" : "@CLICK_FRAMEWORK@"
 }
