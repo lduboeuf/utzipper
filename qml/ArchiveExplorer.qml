@@ -38,7 +38,7 @@ Page {
     header: PageHeader {
         id: header
         subtitle: 'UT zipper'
-        title: archiveReader ? archiveReader.archive.replace(/^.*[\\\/]/, '') : ""
+        title: archiveReader.name
         leadingActionBar.actions: [
             Action {
                 iconName: "close"

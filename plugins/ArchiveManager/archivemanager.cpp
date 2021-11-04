@@ -232,6 +232,15 @@ QString ArchiveManager::save(const QString &archiveName, const QString &suffix)
     return output;
 }
 
+bool ArchiveManager::copy(const QUrl &sourcePath, const QUrl &destination)
+{
+    if (!sourcePath.isValid() || !destination.isValid()) {
+        return false;
+    }
+    qDebug() << "copy:" << destination.toLocalFile();
+    return QFile::copy(sourcePath.toLocalFile(), destination.toLocalFile() + "/" + sourcePath.fileName());
+}
+
 bool ArchiveManager::move(const QUrl &sourcePath, const QUrl &destination)
 {
     if (!sourcePath.isValid() || !destination.isValid()) {

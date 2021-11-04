@@ -62,7 +62,7 @@ Page {
                 Action {
                     iconName: "keyboard-caps-disabled"
                     text: ArchiveManager.currentDir
-                    visible: ArchiveManager.currentDir !== ""
+                    enabled: ArchiveManager.currentDir !== ""
                     onTriggered: ArchiveManager.currentDir = root.navigation.pop()
                 },
                 Action {
@@ -78,6 +78,7 @@ Page {
             delegate: AbstractButton {
                 id: button1
                 action: modelData
+                //anchors.right: rightActionBar.left
                 width: label1.width + icon1.width + units.gu(3)
                 height: parent.height
                 Rectangle {
@@ -94,15 +95,18 @@ Page {
                 }
 
                 Label {
+                    id: label1
                     anchors.centerIn: parent
                     anchors.leftMargin: units.gu(2)
-                    id: label1
+                    elide: Label.ElideLeft
+                    width: Math.min(units.gu(22), implicitWidth)
                     text: action.text
-                    font.weight: text === "Confirm" ? Font.Normal : Font.Light
+                    font.weight: Font.Light
                 }
             }
 
             ActionBar {
+                id: rightActionBar
                 anchors.right: parent.right
                 anchors.rightMargin: units.gu(1)
                 actions: [
@@ -113,6 +117,7 @@ Page {
                     },
                     Action {
                         iconName: "tab-new"
+                        //tab-new
                         text: i18n.tr("new folder")
                         onTriggered: PopupUtils.open(addFolderDialog)
                     }
@@ -184,6 +189,7 @@ Page {
                     } else {
                         ArchiveManager.currentDir = fileName
                     }
+                    ListView.view.ViewItems.dragMode = false
 
                 }
             }
@@ -199,6 +205,8 @@ Page {
                 const idx = event.to
                 if (folderModel.get(event.to, "fileIsDir")) {
                     listView.currentIndex = event.to
+                } else {
+                    listView.currentIndex = -1
                 }
 
             } else if (event.status === ListItemDrag.Dropped) {
@@ -207,27 +215,26 @@ Page {
             }
         }
 
-        moveDisplaced: Transition {
-            UbuntuNumberAnimation {
-                property: "y"
-            }
+        removeDisplaced: Transition {
+                NumberAnimation { property: "y"; duration: 1000 }
         }
-
     }
 
     Label {
         id: errorMsg
-        anchors.centerIn: parent
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: importBtn.top
         visible: ArchiveManager.error != ArchiveManager.NO_ERRORS
         text: i18n.tr("Oups, something went wrong");
     }
+
 
     AbstractButton {
         id: importBtn
         anchors.centerIn: parent
         width: importBtnLabel.width + units.gu(3)
         height: width
-        visible: listView.count < 4
+        visible: listView.count === 0
         Rectangle {
             color: UbuntuColors.slate
             opacity: 0.1
@@ -248,7 +255,7 @@ Page {
                 anchors.horizontalCenter: parent.horizontalCenter
                 id: importBtnLabel
                 text: i18n.tr("Import files")
-                font.weight: text === "Confirm" ? Font.Normal : Font.Light
+                font.weight: Font.Light
             }
         }
         onTriggered: pageStack.push(importPicker, { newArchive: true })

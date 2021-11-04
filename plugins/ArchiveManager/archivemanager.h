@@ -62,6 +62,7 @@ public:
     Q_INVOKABLE bool appendFolder(const QString &name, const QString &parentFolder);
     Q_INVOKABLE bool removeFolder(const QString &name, const QString &parentFolder);
     Q_INVOKABLE QString save(const QString &archiveName, const QString &suffix);
+    Q_INVOKABLE bool copy(const QUrl &sourcePath, const QUrl &destination);
     Q_INVOKABLE bool move(const QUrl &sourcePath, const QUrl &destination);
     Q_INVOKABLE QString iconName(const QString &fileName) const;
 

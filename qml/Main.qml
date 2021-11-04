@@ -33,7 +33,7 @@ MainView {
     height: units.gu(75)
 
     property var activeTransfer
-    property bool openArchiveRequested: false
+    property string currentDir
 
     function cleanup() {
         console.log('cleanup');
@@ -71,9 +71,17 @@ MainView {
         for (let i=0; i < transfer.items.length; i++) {
             const item = transfer.items[i];
             console.log("move to:", destinationDir)
-            if (item.move(destinationDir)){
-                files.push(String(item.url).replace('file://', ''));
+            // we use custom copy here since content-hub contentItem.move() will copy twice the file
+            // files in .cache/HubIncoming will be deleted on transfer.finalize()
+            if (ArchiveManager.copy(item.url, 'file://' + destinationDir)){
+                const fileName = item.url.toString().split('/').pop();
+                files.push(destinationDir + "/" + fileName);
             }
+
+//            if (item.move(destinationDir)){
+//                files.push(String(item.url).replace('file://', ''));
+
+//            }
         }
 
         transfer.finalize();
@@ -257,7 +265,6 @@ MainView {
 
         onImportRequested: {
             if (transfer.state === ContentTransfer.Charged) {
-
                onImport(transfer)
             } else if (transfer.state === ContentTransfer.Finalized) {
                 console.log('ContentTransfer.Finalize');
@@ -274,7 +281,7 @@ MainView {
     }
 
     Component.onCompleted: {
-        //pageStack.push("qrc:/ArchiveExplorer.qml", { archive: '/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
-       // pageStack.push("qrc:/ArchiveWriter.qml", { archive: '/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
+       //pageStack.push("qrc:/ArchiveExplorer.qml", { archive: '/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
+       //pageStack.push("qrc:/ArchiveWriter.qml", { archive: '/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
     }
 }

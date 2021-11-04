@@ -32,7 +32,12 @@ Page {
 
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: i18n.tr("Should support archive files like zip, gzip, bzip, xz, tar, 7z")
+            text: i18n.tr("Should support archive files like:")
+        }
+
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: i18n.tr("zip, gzip, bzip, xz, tar, 7z")
         }
 
         Label {

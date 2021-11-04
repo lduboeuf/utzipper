@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-11-03 15:38+0000\n"
+"POT-Creation-Date: 2021-11-04 10:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,14 +26,18 @@ msgid "Archive Reader - Writer"
 msgstr ""
 
 #: ../qml/About.qml:35
-msgid "Should support archive files like zip, gzip, bzip, xz, tar, 7z"
+msgid "Should support archive files like:"
 msgstr ""
 
 #: ../qml/About.qml:40
+msgid "zip, gzip, bzip, xz, tar, 7z"
+msgstr ""
+
+#: ../qml/About.qml:45
 msgid "Source code:"
 msgstr ""
 
-#: ../qml/ArchiveExplorer.qml:138 ../qml/ArchiveWriter.qml:222
+#: ../qml/ArchiveExplorer.qml:138 ../qml/ArchiveWriter.qml:228
 msgid "Oups, something went wrong"
 msgstr ""
 
@@ -45,87 +49,87 @@ msgstr ""
 msgid "home"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:111
+#: ../qml/ArchiveWriter.qml:115
 msgid "add files"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:116
+#: ../qml/ArchiveWriter.qml:121
 msgid "new folder"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:250
+#: ../qml/ArchiveWriter.qml:257
 msgid "Import files"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:261
+#: ../qml/ArchiveWriter.qml:268
 msgid "Export archive"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:268
+#: ../qml/ArchiveWriter.qml:275
 msgid "my archive name"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:278
+#: ../qml/ArchiveWriter.qml:285
 msgid "format"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:285 ../qml/ArchiveWriter.qml:332
+#: ../qml/ArchiveWriter.qml:292 ../qml/ArchiveWriter.qml:339
 msgid "cancel"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:292
+#: ../qml/ArchiveWriter.qml:299
 msgid "save"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:310
+#: ../qml/ArchiveWriter.qml:317
 msgid "Add folder"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:316
+#: ../qml/ArchiveWriter.qml:323
 msgid "Folder name"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:323
+#: ../qml/ArchiveWriter.qml:330
 msgid "new folder..."
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:339
+#: ../qml/ArchiveWriter.qml:346
 msgid "ok"
 msgstr ""
 
-#: ../qml/Main.qml:94
+#: ../qml/Main.qml:102
 msgid "info"
 msgstr ""
 
-#: ../qml/Main.qml:108
+#: ../qml/Main.qml:116
 msgid "Open archive"
 msgstr ""
 
-#: ../qml/Main.qml:124
+#: ../qml/Main.qml:132
 msgid "Create archive"
 msgstr ""
 
-#: ../qml/Main.qml:147
+#: ../qml/Main.qml:150
 msgid "Choose from"
 msgstr ""
 
-#: ../qml/Main.qml:174
+#: ../qml/Main.qml:176
 msgid "Export to"
 msgstr ""
 
-#: ../qml/Main.qml:217
+#: ../qml/Main.qml:219
 msgid "Unsupported archive format"
 msgstr ""
 
-#: ../qml/Main.qml:229
+#: ../qml/Main.qml:231
 msgid "Would you like to create one with that file(s) ?"
 msgstr ""
 
-#: ../qml/Main.qml:235
+#: ../qml/Main.qml:237
 msgid "no"
 msgstr ""
 
-#: ../qml/Main.qml:241
+#: ../qml/Main.qml:243
 msgid "yes"
 msgstr ""
 
