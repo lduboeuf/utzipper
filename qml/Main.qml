@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021  Your FullName
+ * Copyright (C) 2021  Lionel Duboeuf
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,40 +33,59 @@ MainView {
     height: units.gu(75)
 
     property var activeTransfer
-    property bool openArchiveRequested: false
+    property string currentDir
 
     function cleanup() {
-        console.log('cleanup archive');
-        archiveManager.clear();
+        console.log('cleanup');
+        ArchiveManager.clear();
     }
 
-    function onImportedFiles(files) {
 
-        // we can only address one zip file at once
-        if (archiveManager.isArchiveFile(files[0])) {
-            archiveManager.archive = files[0];
-            pageStack.push("qrc:/ArchiveExplorer.qml", { archiveManager: archiveManager});
+    function onImport(transfer) {
+        let destinationDir = ArchiveManager.tempDir;
+        if (pageStack.currentPage.objectName === "ArchiveWriter") {
+            destinationDir = ArchiveManager.newArchiveDir + "/" + ArchiveManager.currentDir;
+            moveFiles(transfer, destinationDir)
         } else {
-            if (pageStack.currentPage.objectName !== "ArchiveWriter") {
-                // we need to ask
-                const names = files.map( file => file.replace(/^.*[\\\/]/, ''))
-                const popup = PopupUtils.open(newArchiveDialog, undefined, { "files": names });
+            cleanup();
+            if (pageStack.depth > 1) {
+                pageStack.pop();
+            }
+            if (!ArchiveManager.isArchiveFile(String(transfer.items[0].url))){
+                destinationDir = ArchiveManager.newArchiveDir + "/" + ArchiveManager.currentDir;
+                const popup = PopupUtils.open(newArchiveDialog);
                 popup.confirmed.connect(function() {
-                    if (pageStack.depth > 1) {
-                        pageStack.pop();
-                    }
-                    files.forEach( file => archiveManager.appendFile(file, archiveManager.currentDir));
-                    pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager})
+                    moveFiles(transfer, destinationDir)
+                    pageStack.push("qrc:/ArchiveWriter.qml")
                 });
+
             } else {
-                // otherwise just add to the existing archive
-                files.forEach( file => archiveManager.appendFile(file, archiveManager.currentDir));
+                const files = moveFiles(transfer, destinationDir)
+                pageStack.push("qrc:/ArchiveExplorer.qml", { archive: files[0]});
             }
         }
     }
 
-    ArchiveManager {
-        id: archiveManager
+    function moveFiles(transfer, destinationDir) {
+        var files = [];
+        for (let i=0; i < transfer.items.length; i++) {
+            const item = transfer.items[i];
+            console.log("move to:", destinationDir)
+            // we use custom copy here since content-hub contentItem.move() will copy twice the file
+            // files in .cache/HubIncoming will be deleted on transfer.finalize()
+            if (ArchiveManager.copy(item.url, 'file://' + destinationDir)){
+                const fileName = item.url.toString().split('/').pop();
+                files.push(destinationDir + "/" + fileName);
+            }
+
+//            if (item.move(destinationDir)){
+//                files.push(String(item.url).replace('file://', ''));
+
+//            }
+        }
+
+        transfer.finalize();
+        return files;
     }
 
     Page {
@@ -108,7 +127,7 @@ MainView {
 
                 onClicked: {
                     cleanup()
-                    pageStack.push("qrc:/ArchiveWriter.qml", { archiveManager: archiveManager});
+                    pageStack.push("qrc:/ArchiveWriter.qml");
                 }
                 text: i18n.tr("Create archive")
             }
@@ -171,7 +190,6 @@ MainView {
             onPeerSelected: {
                 exportPicker.selectedItems = []
                 exportPicker.files.forEach( file => {
-                                  console.log('added:', file)
                     exportPicker.selectedItems.push(resultComponent.createObject(mainView, {"url": "file://" + file}));
                 })
                 peer.selectionType = ContentTransfer.Single;
@@ -201,7 +219,6 @@ MainView {
             title: i18n.tr("Unsupported archive format")
 
             property alias content : label.text
-            property var files: []
 
             signal confirmed()
 
@@ -211,19 +228,7 @@ MainView {
                     id: label
                     width: parent.width
                     wrapMode: Label.WordWrap
-                    text: i18n.tr("Would you like to create one with that files ? :")
-                }
-
-                Repeater {
-                    model: newArchiveDialogue.files
-                    Label {
-                        anchors.left: label.left
-                        anchors.leftMargin: units.gu(1)
-                        width: parent.width
-                        elide: Text.ElideRight
-                        font.weight: Font.Light
-                        text: modelData
-                    }
+                    text: i18n.tr("Would you like to create one with that file(s) ?")
                 }
 
                 RowLayout {
@@ -260,23 +265,9 @@ MainView {
 
         onImportRequested: {
             if (transfer.state === ContentTransfer.Charged) {
-
-                if (pageStack.currentPage.objectName !== "ArchiveWriter") {
-                    cleanup();
-                    if (pageStack.depth > 1) {
-                        pageStack.pop();
-                    }
-                }
-
-                var files = [];
-                for (let i=0; i < transfer.items.length; i++) {
-                    const item = transfer.items[i];
-                    if (item.move(archiveManager.tempDir)){
-                        files.push(String(item.url).replace('file://', ''));
-                    }
-                }
-                transfer.finalize();
-                onImportedFiles(files)
+               onImport(transfer)
+            } else if (transfer.state === ContentTransfer.Finalized) {
+                console.log('ContentTransfer.Finalize');
 
             }
         }
@@ -285,15 +276,12 @@ MainView {
     Connections {
         target: Qt.application
         onAboutToQuit: {
-            console.log('aboutToQuit');
             cleanup()
         }
     }
 
     Component.onCompleted: {
-
-        //console.log(archiveManager.isArchiveFile('/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'));
-        //onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/debug_content_hub", "/home/lduboeuf/.local/share/utzip.lduboeuf/choucrofzjefpzoejfjzejpozemzpef_vdsvjjvjvjjjpojezopute"])
-        //onImportedFiles(["/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz"])
+       //pageStack.push("qrc:/ArchiveExplorer.qml", { archive: '/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
+       //pageStack.push("qrc:/ArchiveWriter.qml", { archive: '/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
     }
 }

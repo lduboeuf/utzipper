@@ -15,3 +15,9 @@ bool ArchiveItem::isDir() const {
 QString ArchiveItem::fullPath() const {
     return mFullPath;
 }
+
+void ArchiveItem::setFullPath(const QString &fullPath)
+{
+    mFullPath = fullPath;
+}
+

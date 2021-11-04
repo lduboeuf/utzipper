@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021  Your FullName
+ * Copyright (C) 2021  Lionel Duboeuf
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,9 @@
 
 #include "plugin.h"
 #include "archivemanager.h"
+#include "archivereader.h"
 
 void ArchiveReaderPlugin::registerTypes(const char *uri) {
-    //@uri ArchiveManager
-    qmlRegisterType<ArchiveManager>(uri,1, 0, "ArchiveManager");
+    qmlRegisterType<ArchiveReader>(uri,1, 0, "ArchiveReader");
+    qmlRegisterSingletonType<ArchiveManager>(uri, 1, 0, "ArchiveManager", [](QQmlEngine*, QJSEngine*) -> QObject* { return new ArchiveManager; });
 }

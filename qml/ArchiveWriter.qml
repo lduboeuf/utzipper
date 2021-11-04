@@ -3,6 +3,7 @@ import QtQuick.Layouts 1.3
 import Ubuntu.Components 1.3
 import Ubuntu.Content 1.3
 import Ubuntu.Components.Popups 1.3
+import Qt.labs.folderlistmodel 2.12
 
 import ArchiveManager 1.0
 
@@ -11,14 +12,13 @@ Page {
     anchors.fill: parent
     objectName: "ArchiveWriter"
 
-    property ArchiveManager archiveManager: null
+    property string archive: null
     property var navigation: []
 
     function save(archiveName, suffix) {
 
         const name = archiveName.replace(/[\s\?\[\]\/\\=<>:;,\'"&\$#*()|~`!{}%+]+/gi, '_');
-        console.log('name:', name)
-        const archivePath = archiveManager.save(name, suffix)
+        const archivePath = ArchiveManager.save(name, suffix)
         if (archivePath !== "") {
             pageStack.push(exportPicker, { files: [archivePath]})
         } else {
@@ -34,7 +34,10 @@ Page {
         leadingActionBar.actions: [
             Action {
                 iconName: "close"
-                onTriggered: pageStack.pop()
+                onTriggered: {
+                    pageStack.pop()
+                    ArchiveManager.currentDir = ""
+                }
             }
         ]
         trailingActionBar.actions: [
@@ -46,51 +49,90 @@ Page {
         ]
         extension:
             ActionBar {
-            anchors.right: parent.right
-            anchors.rightMargin: units.gu(1)
+
+            id: actionBar
+
+            anchors {
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+                leftMargin: units.gu(1)
+            }
             actions: [
                 Action {
-                    iconName: "import"
-                    visible: !importBtn.visible
-                    text: i18n.tr("add files")
-                    onTriggered: pageStack.push(importPicker, { newArchive: true })
+                    iconName: "keyboard-caps-disabled"
+                    text: ArchiveManager.currentDir
+                    enabled: ArchiveManager.currentDir !== ""
+                    onTriggered: ArchiveManager.currentDir = root.navigation.pop()
+                },
+                Action {
+                    iconName: "go-home"
+                    text: i18n.tr("home")
+                    onTriggered: {
+                        ArchiveManager.currentDir = ""
+                        root.navigation = []
+                    }
                 }
-                //                    Action {
-                //                        iconName: "tab-new"
-                //                        text: i18n.tr("new folder")
-                //                        onTriggered: PopupUtils.open(addFolderDialog)
-                //                    }
             ]
+
             delegate: AbstractButton {
-                id: button
+                id: button1
                 action: modelData
-                width: label.width + icon.width + units.gu(3)
+                //anchors.right: rightActionBar.left
+                width: label1.width + icon1.width + units.gu(3)
                 height: parent.height
                 Rectangle {
                     color: UbuntuColors.slate
                     opacity: 0.1
                     anchors.fill: parent
-                    visible: button.pressed
+                    visible: button1.pressed
                 }
                 Icon {
-                    id: icon
+                    id: icon1
                     anchors.verticalCenter: parent.verticalCenter
                     name: action.iconName
                     width: units.gu(2)
                 }
 
                 Label {
+                    id: label1
                     anchors.centerIn: parent
                     anchors.leftMargin: units.gu(2)
-                    id: label
+                    elide: Label.ElideLeft
+                    width: Math.min(units.gu(22), implicitWidth)
                     text: action.text
-                    font.weight: text === "Confirm" ? Font.Normal : Font.Light
+                    font.weight: Font.Light
                 }
             }
-        }
 
+            ActionBar {
+                id: rightActionBar
+                anchors.right: parent.right
+                anchors.rightMargin: units.gu(1)
+                actions: [
+                    Action {
+                        iconName: "import"
+                        text: i18n.tr("add files")
+                        onTriggered: pageStack.push(importPicker, { newArchive: true })
+                    },
+                    Action {
+                        iconName: "tab-new"
+                        //tab-new
+                        text: i18n.tr("new folder")
+                        onTriggered: PopupUtils.open(addFolderDialog)
+                    }
+                ]
+            }
+        }
     }
 
+    FolderListModel {
+        id: folderModel
+        rootFolder: "file://" + ArchiveManager.newArchiveDir
+        folder: "file://" +  ArchiveManager.newArchiveDir + "/" + ArchiveManager.currentDir
+        showDirsFirst: true
+        showHidden: true
+    }
 
     ListView {
         id: listView
@@ -100,18 +142,24 @@ Page {
             left: parent.left
             right: parent.right
         }
-        model: archiveManager
+        model: folderModel
+        property int draggedIndex: -1
+
+        currentIndex: -1
         delegate: ListItem {
+            id: delegate
             height: layout.height + (divider.visible ? divider.height : 0)
-            color:  selected ? theme.palette.selected.foreground : "transparent"
+            color:  index === listView.currentIndex ? theme.palette.selected.foreground : "transparent"
             ListItemLayout {
                 id: layout
-                title.text: name
+                title.text: fileName
+
                 Icon {
-                    name: isDir ? "document-open" : "stock_document"
+                    name: fileIsDir ? "document-open" : ArchiveManager.iconName(fileName)
                     SlotsLayout.position: SlotsLayout.Leading
                     width: units.gu(2)
                 }
+
             }
             leadingActions: ListItemActions {
                 actions: [
@@ -119,42 +167,74 @@ Page {
                         iconName: "delete"
                         text: "delete"
                         onTriggered: {
-                            if (model.isDir) {
-                                archiveManager.removeFolder(model.name, archiveManager.currentDir)
+                            const parentFolder = String(folderModel.folder).replace('file://', '')
+                            if (fileIsDir) {
+                                ArchiveManager.removeFolder(fileName, parentFolder)
+                                ArchiveManager.currentDir = root.navigation.pop()
                             }else {
-                                archiveManager.removeFile(model.name, archiveManager.currentDir)
+                                ArchiveManager.removeFile(fileName, parentFolder)
                             }
                         }
                     }
                 ]
             }
             onClicked:  {
-                if (isDir) {
-                    root.navigation.push(archiveManager.currentDir)
-                    if (archiveManager.currentDir !== "") {
-                        archiveManager.currentDir = archiveManager.currentDir + "/" + name
+                if (fileIsDir) {
+                    let tmpNav = root.navigation
+                    tmpNav.push(ArchiveManager.currentDir)
+                    root.navigation = tmpNav
+
+                    if (ArchiveManager.currentDir !== "") {
+                        ArchiveManager.currentDir = ArchiveManager.currentDir + "/" + fileName
                     } else {
-                        archiveManager.currentDir = name
+                        ArchiveManager.currentDir = fileName
                     }
+                    ListView.view.ViewItems.dragMode = false
 
                 }
             }
+            onPressAndHold: {
+                ListView.view.ViewItems.dragMode = !ListView.view.ViewItems.dragMode
+            }
+        }
+
+        ViewItems.onDragUpdated: {
+            if (event.status === ListItemDrag.Started) {
+                listView.draggedIndex = event.from
+            } else if (event.status === ListItemDrag.Moving) {
+                const idx = event.to
+                if (folderModel.get(event.to, "fileIsDir")) {
+                    listView.currentIndex = event.to
+                } else {
+                    listView.currentIndex = -1
+                }
+
+            } else if (event.status === ListItemDrag.Dropped) {
+                ArchiveManager.move(folderModel.get(draggedIndex, "fileURL"), folderModel.get(event.to, "fileURL"))
+                listView.currentIndex = -1
+            }
+        }
+
+        removeDisplaced: Transition {
+                NumberAnimation { property: "y"; duration: 1000 }
         }
     }
 
     Label {
         id: errorMsg
-        anchors.centerIn: parent
-        visible: archiveManager.error != ArchiveManager.NO_ERRORS
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: importBtn.top
+        visible: ArchiveManager.error != ArchiveManager.NO_ERRORS
         text: i18n.tr("Oups, something went wrong");
     }
+
 
     AbstractButton {
         id: importBtn
         anchors.centerIn: parent
         width: importBtnLabel.width + units.gu(3)
         height: width
-        visible: listView.count < 3
+        visible: listView.count === 0
         Rectangle {
             color: UbuntuColors.slate
             opacity: 0.1
@@ -175,7 +255,7 @@ Page {
                 anchors.horizontalCenter: parent.horizontalCenter
                 id: importBtnLabel
                 text: i18n.tr("Import files")
-                font.weight: text === "Confirm" ? Font.Normal : Font.Light
+                font.weight: Font.Light
             }
         }
         onTriggered: pageStack.push(importPicker, { newArchive: true })
@@ -223,7 +303,7 @@ Page {
                         onClicked: {
                             root.save(nametxt.displayText, formatList.model[formatList.selectedIndex]);
                             PopupUtils.close(dialogue)
-                        }  
+                        }
                     }
                 }
             }
@@ -235,7 +315,7 @@ Page {
         Dialog {
             id: addFolderDialogue
             title: i18n.tr("Add folder")
-
+            __closeOnDismissAreaPress: true
             Column {
                 spacing: units.gu(2)
                 Label {
@@ -248,29 +328,42 @@ Page {
                 TextField {
                     id:folderNametxt
                     placeholderText: i18n.tr("new folder...")
+                    Keys.onReturnPressed: okBtn.clicked()
+                    focus: true
                     Layout.fillWidth: true
                 }
 
-                Button {
-                    text: i18n.tr("ok")
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    //Layout.fillWidth: true
-                    enabled: folderNametxt.inputMethodComposing || folderNametxt.displayText.length > 0
-                    onClicked: {
-                        archiveManager.appendFolder(folderNametxt.displayText, archiveManager.currentDir)
-                        PopupUtils.close(addFolderDialogue)
+                RowLayout {
+                    width: parent.width
+                    Button {
+                        text: i18n.tr("cancel")
+                        Layout.fillWidth: true
+                        color: theme.palette.normal.base
+                        onClicked: PopupUtils.close(addFolderDialogue)
                     }
-                    Keys.onReturnPressed: clicked()
+                    Button {
+                        id: okBtn
+                        text: i18n.tr("ok")
+                        Layout.fillWidth: true
+                        color: theme.palette.normal.positive
+                        enabled: folderNametxt.inputMethodComposing || folderNametxt.displayText.length > 0
+                        onClicked: {
+                            const ok = ArchiveManager.appendFolder(folderNametxt.displayText, ArchiveManager.currentDir)
+                            if (ok) {
+                                PopupUtils.close(addFolderDialogue)
+                            }
+                        }
+                        Keys.onReturnPressed: clicked()
+                    }
                 }
             }
         }
     }
 
-    Connections {
-        target: archiveManager
-
-        onCurrentDirChanged: {
-            listView.ViewItems.selectedIndices = []
+    Component.onCompleted: {
+        if (root.archive) {
+            ArchiveManager.extractTo(root.archive, ArchiveManager.newArchiveDir)
         }
     }
+
 }
