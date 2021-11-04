@@ -165,7 +165,7 @@ Page {
                 actions: [
                     Action {
                         iconName: "delete"
-                        text: "delete"
+                        text: i18n.tr("delete")
                         onTriggered: {
                             const parentFolder = String(folderModel.folder).replace('file://', '')
                             if (fileIsDir) {
