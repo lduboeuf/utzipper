@@ -37,12 +37,12 @@ Page {
 
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: i18n.tr("zip, gzip, bzip, xz, tar, 7z")
+            text: "zip, gzip, bzip, xz, tar, 7z"
         }
 
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: i18n.tr("Source code:") + "<a href=\"https://github.com/lduboeuf/utzipper\">https://github.com/lduboeuf/utzipper</a>"
+            text: i18n.tr("Source code:") + " <a href=\"https://github.com/lduboeuf/utzipper\">https://github.com/lduboeuf/utzipper</a>"
             onLinkActivated: Qt.openUrlExternally(link)
             wrapMode: Label.WordWrap
         }

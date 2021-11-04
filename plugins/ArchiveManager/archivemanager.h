@@ -87,7 +87,6 @@ private:
     KArchive* getKArchiveObject(const QString &filePath);
 
     void cleanDirectory(const QString &path);
-   // void extractArchive(const KArchiveDirectory *dir, const QString &path);
 };
 
 #endif

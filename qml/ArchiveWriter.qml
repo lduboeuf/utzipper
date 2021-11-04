@@ -170,7 +170,6 @@ Page {
                             const parentFolder = String(folderModel.folder).replace('file://', '')
                             if (fileIsDir) {
                                 ArchiveManager.removeFolder(fileName, parentFolder)
-                                ArchiveManager.currentDir = root.navigation.pop()
                             }else {
                                 ArchiveManager.removeFile(fileName, parentFolder)
                             }
