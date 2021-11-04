@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-10-27 14:00+0000\n"
-"PO-Revision-Date: 2021-10-27 15:32+0200\n"
+"PO-Revision-Date: 2021-11-04 12:15+0200\n"
 "Last-Translator: Vojtěch Dubský <xdub@dubix.eu>\n"
 "Language-Team: \n"
 "Language: cs\n"
@@ -20,20 +20,23 @@ msgstr ""
 msgid "About"
 msgstr "O Aplikaci"
 
-#: ../qml/About.qml:23
+#: ../qml/About.qml:30
 msgid "Archive Reader - Writer"
 msgstr "Archivátor pro Čtení - Zápis"
 
-#: ../qml/About.qml:27
-msgid "Should support archive files like zip, gzip, bzip, xz, tar, 7z"
-msgstr "Aplikace by měla by podporovat soubory archivů jako"
-	"zip, gzip, bzip, xz, tar a 7z"
+#: ../qml/About.qml:35
+msgid "Should support archive files like:"
+msgstr "Aplikace by měla by podporovat soubory archivů:"
 
-#: ../qml/About.qml:31
+#: ../qml/About.qml:40
+msgid "zip, gzip, bzip, xz, tar, 7z"
+msgstr "zip, gzip, bzip, xz, tar, 7z"
+
+#: ../qml/About.qml:45
 msgid "Source code:"
 msgstr "Zdrojový kód:"
 
-#: ../qml/ArchiveExplorer.qml:128 ../qml/ArchiveWriter.qml:149
+#: ../qml/ArchiveExplorer.qml:138 ../qml/ArchiveWriter.qml:228
 msgid "Oups, something went wrong"
 msgstr "Ups, něco se pokazilo"
 
@@ -41,83 +44,153 @@ msgstr "Ups, něco se pokazilo"
 msgid "new Archive"
 msgstr "nový Archiv"
 
-#: ../qml/ArchiveWriter.qml:55
+#: ../qml/ArchiveWriter.qml:70
+msgid "home"
+msgstr "domů"
+
+#: ../qml/ArchiveWriter.qml:115
 msgid "add files"
 msgstr "vložit soubory"
 
-#: ../qml/ArchiveWriter.qml:177
+#: ../qml/ArchiveWriter.qml:121
+msgid "new folder"
+msgstr "nový adresář"
+
+#: ../qml/ArchiveWriter.qml:257
 msgid "Import files"
-msgstr "importovat soubory"
+msgstr "Importovat soubory"
 
-#: ../qml/ArchiveWriter.qml:188
+#: ../qml/ArchiveWriter.qml:268
 msgid "Export archive"
-msgstr "Rozbalit archiv"
+msgstr "Uložit archiv"
 
-#: ../qml/ArchiveWriter.qml:195
+#: ../qml/ArchiveWriter.qml:275
 msgid "my archive name"
 msgstr "jméno archivu"
 
-#: ../qml/ArchiveWriter.qml:205
+#: ../qml/ArchiveWriter.qml:285
 msgid "format"
 msgstr "formát"
 
-#: ../qml/ArchiveWriter.qml:212
+#: ../qml/ArchiveWriter.qml:292 ../qml/ArchiveWriter.qml:339
 msgid "cancel"
 msgstr "zrušit"
 
-#: ../qml/ArchiveWriter.qml:219
+#: ../qml/ArchiveWriter.qml:299
 msgid "save"
 msgstr "uložit"
 
-#: ../qml/ArchiveWriter.qml:237
+#: ../qml/ArchiveWriter.qml:317
 msgid "Add folder"
 msgstr "Vložit adresář"
 
-#: ../qml/ArchiveWriter.qml:243
+#: ../qml/ArchiveWriter.qml:323
 msgid "Folder name"
 msgstr "Jméno adresáře"
 
-#: ../qml/ArchiveWriter.qml:250
+#: ../qml/ArchiveWriter.qml:330
 msgid "new folder..."
 msgstr "nový adresář..."
 
-#: ../qml/ArchiveWriter.qml:255
+#: ../qml/ArchiveWriter.qml:346
 msgid "ok"
 msgstr "ok"
 
-#: ../qml/Main.qml:83
+#: ../qml/Main.qml:102
 msgid "info"
 msgstr "informace"
 
-#: ../qml/Main.qml:97
+#: ../qml/Main.qml:116
 msgid "Open archive"
 msgstr "Otevřít archiv"
 
-#: ../qml/Main.qml:113
+#: ../qml/Main.qml:132
 msgid "Create archive"
 msgstr "Vytvořit archiv"
 
-#: ../qml/Main.qml:131
+#: ../qml/Main.qml:150
 msgid "Choose from"
 msgstr "Vybrat z"
 
-#: ../qml/Main.qml:157
+#: ../qml/Main.qml:176
 msgid "Export to"
 msgstr "Uložit do"
 
-#: ../qml/Main.qml:201
+#: ../qml/Main.qml:219
 msgid "Unsupported archive format"
 msgstr "Nepodporovaný formát archivu"
 
-#: ../qml/Main.qml:214
-msgid "Would you like to create one with that files ? :"
-msgstr "Chcete vytvořit jeden z těchto souborů ? :"
+# Tady si nejsem jistý, jestli jsem to pochopil kontextově správně.
+#: ../qml/Main.qml:231
+msgid "Would you like to create one with that file(s) ?"
+msgstr "Chcete vytvořit archiv z těchto souborů ?"
 
-#: ../qml/Main.qml:232
+#: ../qml/Main.qml:237
 msgid "no"
 msgstr "ne"
 
-#: ../qml/Main.qml:238
+#: ../qml/Main.qml:243
+msgid "yes"
+msgstr "ano"
+
+#: utzip.desktop.in.h:1
+msgid "UT zipper"
+msgstr "UT zipper"
+
+
+#: ../qml/ArchiveWriter.qml:299
+msgid "save"
+msgstr "uložit"
+
+#: ../qml/ArchiveWriter.qml:317
+msgid "Add folder"
+msgstr "Vložit adresář"
+
+#: ../qml/ArchiveWriter.qml:323
+msgid "Folder name"
+msgstr "Jméno adresáře"
+
+#: ../qml/ArchiveWriter.qml:330
+msgid "new folder..."
+msgstr "nový adresář..."
+
+#: ../qml/ArchiveWriter.qml:346
+msgid "ok"
+msgstr "ok"
+
+#: ../qml/Main.qml:102
+msgid "info"
+msgstr "informace"
+
+#: ../qml/Main.qml:116
+msgid "Open archive"
+msgstr "Otevřít archiv"
+
+#: ../qml/Main.qml:132
+msgid "Create archive"
+msgstr "Vytvořit archiv"
+
+#: ../qml/Main.qml:150
+msgid "Choose from"
+msgstr "Vybrat z"
+
+#: ../qml/Main.qml:176
+msgid "Export to"
+msgstr "Uložit do"
+
+#: ../qml/Main.qml:219
+msgid "Unsupported archive format"
+msgstr "Nepodporovaný formát archivu"
+
+#: ../qml/Main.qml:231
+msgid "Would you like to create one with that file(s) ?"
+msgstr "Chcete vytvořit archiv z těchto souborů ?"
+
+#: ../qml/Main.qml:237
+msgid "no"
+msgstr "ne"
+
+#: ../qml/Main.qml:243
 msgid "yes"
 msgstr "ano"
 
