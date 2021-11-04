@@ -3,29 +3,21 @@ import Ubuntu.Components 1.3
 import Ubuntu.Content 1.3
 import Ubuntu.Components.Popups 1.3
 
-import ArchiveReader 1.0
+import ArchiveManager 1.0
 
 Page {
     id: root
     anchors.fill: parent
+    objectName: "ArchiveReader"
 
-    property alias archive: archiveModel.archive
+    property ArchiveManager archiveManager: null
     property var navigation: []
-    property list<ContentItem> selectedItems
-    property var activeTransfer
-
-    function cleanup() {
-        if (activeTransfer) {
-            console.log('cleanup transfer');
-            activeTransfer.finalize();
-        }
-    }
 
     function selectAll() {
         const currentIndices = listView.ViewItems.selectedIndices
         let nextIndices = []
-        for (let i=0; i < archiveModel.rowCount(); i++) {
-            if (!archiveModel.get(i).isDir) {
+        for (let i=0; i < archiveManager.rowCount(); i++) {
+            if (!archiveManager.get(i).isDir) {
                 nextIndices.push(i)
             }
         }
@@ -38,18 +30,22 @@ Page {
 
     function share() {
         const selectedFiles = listView.ViewItems.selectedIndices
-        selectedFiles.forEach(idx => {
-                                  const path = archiveModel.get(idx).fullPath;
-                                  const out = archiveModel.extractFile(path);
-                                  selectedItems.push(resultComponent.createObject(root, {"url": "file://" + out}));
-                              });
-        pageStack.push(picker)
+        const files = selectedFiles.map(idx => archiveManager.get(idx).fullPath);
+        const outFiles = archiveManager.extractFiles(files);
+        pageStack.push(exportPicker, { files: outFiles })
     }
 
     header: PageHeader {
         id: header
-        title: i18n.tr('UT zipper')
-        subtitle: archiveModel ? archive.replace(/^.*[\\\/]/, '') : ""
+        subtitle: 'UT zipper'
+        //title: i18n.tr('UT zipper')
+        title: archiveManager ? archiveManager.archive.replace(/^.*[\\\/]/, '') : ""
+        leadingActionBar.actions: [
+            Action {
+                iconName: "close"
+                onTriggered: pageStack.pop()
+            }
+        ]
         trailingActionBar.actions: [
             Action {
                 iconName: "share"
@@ -73,13 +69,13 @@ Page {
                 Action {
                     iconName: "keyboard-caps-disabled"
                     text: "up"
-                    enabled: archiveModel.currentDir !== ""
-                    onTriggered: archiveModel.currentDir = root.navigation.pop()
+                    enabled: archiveManager.currentDir !== ""
+                    onTriggered: archiveManager.currentDir = root.navigation.pop()
                 },
                 Action {
                     iconName: "go-home"
                     text: "home"
-                    onTriggered: archiveModel.currentDir = ""
+                    onTriggered: archiveManager.currentDir = ""
                 }
             ]
 
@@ -117,7 +113,7 @@ Page {
                     Action {
                         iconName: "select"
                         text: "select all"
-                        enabled: archiveModel.hasFiles
+                        enabled: archiveManager.hasFiles
                         onTriggered: selectAll()
                     }
                 ]
@@ -128,27 +124,8 @@ Page {
     Label {
         id: errorMsg
         anchors.centerIn: parent
-        visible: archiveModel.error != ArchiveReader.NO_ERRORS
-        text: i18n.tr("Sorry, unsupported file format");
-    }
-
-    ArchiveReader {
-        id: archiveModel
-        property bool hasFiles: false
-        currentDir: ""
-        onCurrentDirChanged: {
-            listView.ViewItems.selectedIndices = []
-        }
-        onRowCountChanged: {
-            hasFiles = false;
-            for (let i=0; i < archiveModel.rowCount(); i++) {
-                console.log(archiveModel.get(i).name, archiveModel.get(i).isDir)
-                if (!archiveModel.get(i).isDir) {
-                    hasFiles = true;
-                    return;
-                }
-            }
-        }
+        visible: archiveManager.error != ArchiveManager.NO_ERRORS
+        text: i18n.tr("Oups, something went wrong");
     }
 
     ListView {
@@ -159,7 +136,7 @@ Page {
             left: parent.left
             right: parent.right
         }
-        model: archiveModel
+        model: archiveManager
         delegate: ListItem {
             height: layout.height + (divider.visible ? divider.height : 0)
             color:  selected ? theme.palette.selected.foreground : "transparent"
@@ -176,11 +153,11 @@ Page {
                 if (!isDir) {
                     selected = !selected
                 } else {
-                    root.navigation.push(archiveModel.currentDir)
-                    if (archiveModel.currentDir !== "") {
-                        archiveModel.currentDir = archiveModel.currentDir + "/" + name
+                    root.navigation.push(archiveManager.currentDir)
+                    if (archiveManager.currentDir !== "") {
+                        archiveManager.currentDir = archiveManager.currentDir + "/" + name
                     } else {
-                        archiveModel.currentDir = name
+                        archiveManager.currentDir = name
                     }
 
                 }
@@ -188,54 +165,11 @@ Page {
         }
     }
 
-    Page {
-        id: picker
-        visible: false
-        header: PageHeader {
-            id: pickerHeader
-            title: i18n.tr("Export to")
-        }
-
-        ContentPeerPicker {
-            id: peerPicker
-            anchors.top: pickerHeader.bottom
-            anchors.topMargin: units.gu(1)
-            handler: ContentHandler.Destination
-            contentType: ContentType.Documents
-            showTitle: false
-
-            onPeerSelected: {
-                peer.selectionType = ContentTransfer.Multiple;
-                root.activeTransfer = peer.request();
-                root.activeTransfer.stateChanged.connect(function() {
-                    if (root.activeTransfer.state === ContentTransfer.InProgress) {
-                        console.log("Export: In progress, nb items:", selectedItems.length);
-                        root.activeTransfer.items = selectedItems;
-                        root.activeTransfer.state = ContentTransfer.Charged;
-                        pageStack.pop()
-                    }
-                })
-            }
-
-            onCancelPressed: pageStack.pop();
-        }
-    }
-
-    ContentTransferHint {
-        id: transferHint
-        anchors.fill: parent
-        activeTransfer: root.activeTransfer
-    }
-
-    Component {
-        id: resultComponent
-        ContentItem {}
-    }
-
     Connections {
-        target: Qt.application
-        onAboutToQuit: {
-            cleanup()
+        target: archiveManager
+
+        onCurrentDirChanged: {
+            listView.ViewItems.selectedIndices = []
         }
     }
 }

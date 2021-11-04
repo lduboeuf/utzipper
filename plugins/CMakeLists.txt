@@ -1,1 +1,1 @@
-add_subdirectory(ArchiveReader)
+add_subdirectory(ArchiveManager)

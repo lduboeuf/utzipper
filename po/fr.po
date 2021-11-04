@@ -8,121 +8,119 @@ msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-10-30 19:57+0000\n"
-"PO-Revision-Date: 2021-10-31 11:28+0100\n"
-"Last-Translator: Heimen Stoffels <vistausss@fastmail.com>\n"
-"Language-Team: \n"
-"Language: nl\n"
+"PO-Revision-Date: 2021-10-31 18:57+0100\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.0\n"
+"Last-Translator: Anne017\n"
+"Language-Team: \n"
 
 #: ../qml/About.qml:11 ../qml/ArchiveExplorer.qml:40
 #: ../qml/ArchiveWriter.qml:32 ../qml/Main.qml:78 utzip.desktop.in.h:1
 msgid "UT zipper"
-msgstr "UT-zipper"
+msgstr "Archives"
 
 #: ../qml/About.qml:23
 msgid "Archive Reader/Writer"
-msgstr "Bekijk en maak archieven"
+msgstr "Lecteur/liseur d'archives"
 
 #: ../qml/About.qml:27
 msgid "Should support archive files like zip, gzip, bzip, xz, tar, 7z"
-msgstr "Ondersteunt archiefbestanden, waaronder zip, gzip, bzip, xz, tar en 7z"
+msgstr "Prend en charge les fichiers zip, gzip, bzip, xz, tar et 7z"
 
 #: ../qml/About.qml:31
 msgid "Source code:"
-msgstr "Broncode:"
+msgstr "Code source :"
 
 #: ../qml/ArchiveExplorer.qml:128 ../qml/ArchiveWriter.qml:149
 msgid "Oups, something went wrong"
-msgstr "Er is iets misgegaan."
+msgstr "Oups, une erreur s'est produite"
 
 #: ../qml/ArchiveWriter.qml:33
 msgid "new Archive"
-msgstr "Nieuw archief"
+msgstr "Nouvelle archive"
 
 #: ../qml/ArchiveWriter.qml:55
 msgid "add files"
-msgstr "Bestanden toevoegen"
+msgstr "Ajouter des fichiers"
 
 #: ../qml/ArchiveWriter.qml:177
 msgid "Import files"
-msgstr "Bestanden importeren"
+msgstr "Importer des fichiers"
 
 #: ../qml/ArchiveWriter.qml:188
 msgid "Export archive"
-msgstr "Archief exporteren"
+msgstr "Exporter une archive"
 
 #: ../qml/ArchiveWriter.qml:194
 msgid "Archive name"
-msgstr "Archiefnaam"
+msgstr "Nom de l'archive"
 
 #: ../qml/ArchiveWriter.qml:201
 msgid "new archive..."
-msgstr "Nieuw archief…"
+msgstr "Nouvelle archive..."
 
 #: ../qml/ArchiveWriter.qml:209
 msgid "Archive format"
-msgstr "Archiefformaat"
+msgstr "Format de l'archive"
 
 #: ../qml/ArchiveWriter.qml:216
 msgid "cancel"
-msgstr "Annuleren"
+msgstr "Annuler"
 
 #: ../qml/ArchiveWriter.qml:222
 msgid "save"
-msgstr "Opslaan"
+msgstr "Enregistrer"
 
 #: ../qml/ArchiveWriter.qml:241
 msgid "Add folder"
-msgstr "Map toevoegen"
+msgstr "Ajouter un dossier"
 
 #: ../qml/ArchiveWriter.qml:247
 msgid "Folder name"
-msgstr "Mapnaam"
+msgstr "Nom du dossier"
 
 #: ../qml/ArchiveWriter.qml:254
 msgid "new folder..."
-msgstr "Nieuwe map…"
+msgstr "Nouveau dossier..."
 
 #: ../qml/ArchiveWriter.qml:259
 msgid "ok"
-msgstr "Oké"
+msgstr "Valider"
 
 #: ../qml/Main.qml:96
 msgid "Open archive"
-msgstr "Archief openen"
+msgstr "Ouvrir une archive"
 
 #: ../qml/Main.qml:112
 msgid "Create archive"
-msgstr "Archief maken"
+msgstr "Créer une archive"
 
 #: ../qml/Main.qml:130
 msgid "Choose from"
-msgstr "Kiezen uit"
+msgstr "Choisir à partir de"
 
 #: ../qml/Main.qml:156
 msgid "Export to"
-msgstr "Exporteren naar"
+msgstr "Exporter vers"
 
 #: ../qml/Main.qml:200
 msgid "Unsupported archive format"
-msgstr "Niet-ondersteund bestandsformaat"
+msgstr "Format d'archive non pris en charge"
 
 #: ../qml/Main.qml:214
 msgid "Sorry, not a supported archive file"
-msgstr "Dit bestandsformaat wordt niet ondersteund"
+msgstr "Désolé, il ne s'agit pas d'un fichier d'archive pris en charge"
 
 #: ../qml/Main.qml:222
 msgid "Create an archive with:"
-msgstr "Archief maken met:"
+msgstr "Créer une archive avec :"
 
 #: ../qml/Main.qml:240
 msgid "no"
-msgstr "Nee"
+msgstr "Non"
 
 #: ../qml/Main.qml:246
 msgid "yes"
-msgstr "Ja"
+msgstr "Oui"

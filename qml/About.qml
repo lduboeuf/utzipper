@@ -8,23 +8,29 @@ Page {
 
     header: PageHeader {
         id: header
-        title: i18n.tr('UT zipper')
+        title: i18n.tr('About')
+        subtitle: "UT Zipper"
     }
 
 
     Column {
         anchors.centerIn: parent
+        spacing: units.gu(3)
 
         Label {
-            text: i18n.tr("Archive reader")
+            fontSize: "large"
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: i18n.tr("Archive Reader - Writer")
         }
 
         Label {
             text: i18n.tr("Should support archive files like zip, gzip, bzip, xz, tar, 7z")
         }
 
+        Label {
+            text: i18n.tr("Source code:") + "<a href=\"https://github.com/lduboeuf/utzipper\">https://github.com/lduboeuf/utzipper</a>"
+            onLinkActivated: Qt.openUrlExternally(link)
+            wrapMode: Label.WordWrap
+        }
     }
-
-
-
 }
