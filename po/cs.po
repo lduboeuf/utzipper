@@ -182,6 +182,7 @@ msgstr "Uložit do"
 msgid "Unsupported archive format"
 msgstr "Nepodporovaný formát archivu"
 
+# Tady si nejsem jistý, jestli jsem to pochopil kontextově správně.
 #: ../qml/Main.qml:231
 msgid "Would you like to create one with that file(s) ?"
 msgstr "Chcete vytvořit archiv z těchto souborů ?"
