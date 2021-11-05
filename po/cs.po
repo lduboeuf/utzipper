@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-10-27 14:00+0000\n"
-"PO-Revision-Date: 2021-10-27 15:32+0200\n"
+"PO-Revision-Date: 2021-11-04 12:15+0200\n"
 "Last-Translator: Vojtěch Dubský <xdub@dubix.eu>\n"
 "Language-Team: \n"
 "Language: cs\n"
@@ -16,35 +16,123 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../qml/About.qml:11 ../qml/ArchiveExplorer.qml:26 ../qml/Main.qml:82
-#: utzip.desktop.in.h:1
-msgid "UT zipper"
-msgstr "UT zipper"
+#: ../qml/About.qml:11
+msgid "About"
+msgstr "O Aplikaci"
 
-#: ../qml/About.qml:19
-msgid "Archive reader"
-msgstr "Čtečka archivů"
+#: ../qml/About.qml:30
+msgid "Archive Reader - Writer"
+msgstr "Archivátor pro Čtení - Zápis"
 
-#: ../qml/About.qml:23
-msgid "Should support archive files like zip, gzip, bzip, xz, tar, 7z"
-msgstr "Aplikace by měla by podporovat soubory archivů jako zip, gzip, bzip, xz, tar en 7z"
+#: ../qml/About.qml:35
+msgid "Should support archive files like:"
+msgstr "Aplikace by měla by podporovat soubory archivů:"
 
-#: ../qml/ArchiveExplorer.qml:134
-msgid "Sorry, unsupported file format"
-msgstr "Lituji, nepodporovaný formát souboru"
+#: ../qml/About.qml:40
+msgid "zip, gzip, bzip, xz, tar, 7z"
+msgstr "zip, gzip, bzip, xz, tar, 7z"
 
-#: ../qml/ArchiveExplorer.qml:198
-msgid "Export to"
-msgstr "Exportovat do"
+#: ../qml/About.qml:45
+msgid "Source code:"
+msgstr "Zdrojový kód:"
 
-#: ../qml/Main.qml:48
-msgid "Choose from"
-msgstr "Vybrat z"
+#: ../qml/ArchiveExplorer.qml:138 ../qml/ArchiveWriter.qml:228
+msgid "Oups, something went wrong"
+msgstr "Ups, něco se pokazilo"
 
-#: ../qml/Main.qml:99
+#: ../qml/ArchiveWriter.qml:33
+msgid "new Archive"
+msgstr "nový Archiv"
+
+#: ../qml/ArchiveWriter.qml:70
+msgid "home"
+msgstr "domů"
+
+#: ../qml/ArchiveWriter.qml:115
+msgid "add files"
+msgstr "vložit soubory"
+
+#: ../qml/ArchiveWriter.qml:121
+msgid "new folder"
+msgstr "nový adresář"
+
+#: ../qml/ArchiveWriter.qml:257
+msgid "Import files"
+msgstr "Importovat soubory"
+
+#: ../qml/ArchiveWriter.qml:268
+msgid "Export archive"
+msgstr "Uložit archiv"
+
+#: ../qml/ArchiveWriter.qml:275
+msgid "my archive name"
+msgstr "jméno archivu"
+
+#: ../qml/ArchiveWriter.qml:285
+msgid "format"
+msgstr "formát"
+
+#: ../qml/ArchiveWriter.qml:292 ../qml/ArchiveWriter.qml:339
+msgid "cancel"
+msgstr "zrušit"
+
+#: ../qml/ArchiveWriter.qml:299
+msgid "save"
+msgstr "uložit"
+
+#: ../qml/ArchiveWriter.qml:317
+msgid "Add folder"
+msgstr "Vložit adresář"
+
+#: ../qml/ArchiveWriter.qml:323
+msgid "Folder name"
+msgstr "Jméno adresáře"
+
+#: ../qml/ArchiveWriter.qml:330
+msgid "new folder..."
+msgstr "nový adresář..."
+
+#: ../qml/ArchiveWriter.qml:346
+msgid "ok"
+msgstr "ok"
+
+#: ../qml/Main.qml:102
+msgid "info"
+msgstr "informace"
+
+#: ../qml/Main.qml:116
 msgid "Open archive"
 msgstr "Otevřít archiv"
 
-#: ../qml/Main.qml:113
+#: ../qml/Main.qml:132
 msgid "Create archive"
 msgstr "Vytvořit archiv"
+
+#: ../qml/Main.qml:150
+msgid "Choose from"
+msgstr "Vybrat z"
+
+#: ../qml/Main.qml:176
+msgid "Export to"
+msgstr "Uložit do"
+
+#: ../qml/Main.qml:219
+msgid "Unsupported archive format"
+msgstr "Nepodporovaný formát archivu"
+
+# Tady si nejsem jistý, jestli jsem to pochopil kontextově správně.
+#: ../qml/Main.qml:231
+msgid "Would you like to create one with that file(s) ?"
+msgstr "Chcete vytvořit archiv z těchto souborů ?"
+
+#: ../qml/Main.qml:237
+msgid "no"
+msgstr "ne"
+
+#: ../qml/Main.qml:243
+msgid "yes"
+msgstr "ano"
+
+#: utzip.desktop.in.h:1
+msgid "UT zipper"
+msgstr "UT zipper"
