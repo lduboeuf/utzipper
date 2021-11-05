@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-11-04 17:44+0000\n"
+"POT-Creation-Date: 2021-11-04 21:46+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,6 +33,18 @@ msgstr ""
 msgid "Source code:"
 msgstr ""
 
+#: ../qml/ArchiveExplorer.qml:76
+msgid "up"
+msgstr ""
+
+#: ../qml/ArchiveExplorer.qml:82 ../qml/ArchiveWriter.qml:70
+msgid "home"
+msgstr ""
+
+#: ../qml/ArchiveExplorer.qml:120
+msgid "select all"
+msgstr ""
+
 #: ../qml/ArchiveExplorer.qml:138 ../qml/ArchiveWriter.qml:227
 msgid "Oups, something went wrong"
 msgstr ""
@@ -41,16 +53,16 @@ msgstr ""
 msgid "new Archive"
 msgstr ""
 
-#: ../qml/ArchiveWriter.qml:70
-msgid "home"
-msgstr ""
-
 #: ../qml/ArchiveWriter.qml:115
 msgid "add files"
 msgstr ""
 
 #: ../qml/ArchiveWriter.qml:121
 msgid "new folder"
+msgstr ""
+
+#: ../qml/ArchiveWriter.qml:168
+msgid "delete"
 msgstr ""
 
 #: ../qml/ArchiveWriter.qml:256

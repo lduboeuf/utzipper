@@ -73,13 +73,13 @@ Page {
             actions: [
                 Action {
                     iconName: "keyboard-caps-disabled"
-                    text: "up"
+                    text: i18n.tr("up")
                     enabled: archiveReader.currentDir !== ""
                     onTriggered: archiveReader.currentDir = root.navigation.pop()
                 },
                 Action {
                     iconName: "go-home"
-                    text: "home"
+                    text: i18n.tr("home")
                     onTriggered: archiveReader.currentDir = ""
                 }
             ]
@@ -117,7 +117,7 @@ Page {
                 actions: [
                     Action {
                         iconName: "select"
-                        text: "select all"
+                        text: i18n.tr("select all")
                         enabled: archiveReader.hasFiles
                         onTriggered: selectAll()
                     }
