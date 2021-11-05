@@ -31,7 +31,9 @@ Page {
     function share() {
         const selectedFiles = listView.ViewItems.selectedIndices
         const files = selectedFiles.map(idx => archiveReader.get(idx).fullPath);
+        console.log("files", files)
         const outFiles = ArchiveManager.extractFiles(archiveReader.archive, files);
+        console.log(outFiles)
         pageStack.push(exportPicker, { files: outFiles })
     }
 

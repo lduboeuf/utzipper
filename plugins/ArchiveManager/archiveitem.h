@@ -2,21 +2,22 @@
 #define ARCHIVEITEM_H
 
 #include <QString>
+#include <QUrl>
 
 class ArchiveItem {
 
 public:
-    ArchiveItem(const QString& name, bool isDir, const QString& fullPath);
+    ArchiveItem(const QString& name, bool isDir, const QUrl& fullPath);
 
     QString name() const;
     bool isDir() const;
-    QString fullPath() const;
-    void setFullPath(const QString &fullPath);
+    QUrl fullPath() const;
+    void setFullPath(const QUrl &fullPath);
 
 private:
     QString mName;
     bool mIsDir;
-    QString mFullPath;
+    QUrl mFullPath;
 };
 
 #endif // ARCHIVEITEM_H

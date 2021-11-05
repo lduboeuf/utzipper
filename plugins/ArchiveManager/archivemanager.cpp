@@ -31,6 +31,8 @@
 
 ArchiveManager::ArchiveManager(QObject *parent) : QObject(parent), mError(NO_ERRORS) {
 
+    connect(this,SIGNAL(currentDirChanged()),this,SIGNAL(currentNameChanged()));
+
     archiveMimeTypes.insert("zip", { "application/zip", "application/x-zip", "application/x-zip-compressed" });
     archiveMimeTypes.insert("tar", { "application/x-compressed-tar", "application/x-bzip-compressed-tar", "application/x-lzma-compressed-tar", "application/x-xz-compressed-tar", "application/x-gzip", "application/x-bzip", "application/x-lzma", "application/x-xz" });
     archiveMimeTypes.insert("7z", { "application/x-7z-compressed" });
@@ -38,23 +40,23 @@ ArchiveManager::ArchiveManager(QObject *parent) : QObject(parent), mError(NO_ERR
     // working directory for new archives
     QString output = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/newArchive";
     QDir().mkdir(output);
-    setNewArchiveDir(output);
+    setNewArchiveDir(QUrl::fromLocalFile(output));
 
     // temp dir
     QString tmpDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-    setTempDir(tmpDir);
+    setTempDir(QUrl::fromLocalFile(tmpDir));
 }
 
 ArchiveManager::~ArchiveManager()
 {
 }
 
-QString ArchiveManager::currentDir() const
+QUrl ArchiveManager::currentDir() const
 {
     return mCurrentDir;
 }
 
-void ArchiveManager::setCurrentDir(const QString &currentDir)
+void ArchiveManager::setCurrentDir(const QUrl &currentDir)
 {
     if (mCurrentDir == currentDir) {
         return;
@@ -64,12 +66,17 @@ void ArchiveManager::setCurrentDir(const QString &currentDir)
     Q_EMIT currentDirChanged();
 }
 
-QString ArchiveManager::tempDir() const
+QString ArchiveManager::currentName() const
+{
+    return mCurrentDir == mNewArchiveDir ? "" : mCurrentDir.fileName();
+}
+
+QUrl ArchiveManager::tempDir() const
 {
     return mTempDir;
 }
 
-void ArchiveManager::setTempDir(const QString &path)
+void ArchiveManager::setTempDir(const QUrl &path)
 {
     if (mTempDir != path) {
         mTempDir = path;
@@ -78,17 +85,19 @@ void ArchiveManager::setTempDir(const QString &path)
     }
 }
 
-QString ArchiveManager::newArchiveDir() const
+QUrl ArchiveManager::newArchiveDir() const
 {
     return mNewArchiveDir;
 }
 
-void ArchiveManager::setNewArchiveDir(const QString &path)
+void ArchiveManager::setNewArchiveDir(const QUrl &path)
 {
     if (mNewArchiveDir != path) {
         mNewArchiveDir = path;
+        mCurrentDir = path;
         qDebug() << "tempDir" << path;
         Q_EMIT newArchiveDirChanged();
+        Q_EMIT currentDirChanged();
     }
 }
 
@@ -108,34 +117,34 @@ void ArchiveManager::clear()
     setError(Errors::NO_ERRORS);
 
     //clean new archive dir
-    cleanDirectory(mNewArchiveDir);
+    cleanDirectory(mNewArchiveDir.toLocalFile());
 
     //clean tmp dir
-    cleanDirectory(mTempDir);
+    cleanDirectory(mTempDir.toLocalFile());
 
 }
 
 
-QStringList ArchiveManager::extractFiles(const QString &archive, const QStringList &files)
+QList<QUrl> ArchiveManager::extractFiles(const QUrl &archive, const QList<QUrl> &files)
 {
-    QStringList outFiles;
-    KArchive *mArchivePtr = getKArchiveObject(archive);
+    QList<QUrl> outFiles;
+    KArchive *mArchivePtr = getKArchiveObject(archive.toLocalFile());
     if (!mArchivePtr) {
         return outFiles;
     }
 
-    QString output = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-
     const KArchiveDirectory *rootDir = mArchivePtr->directory();
-    foreach(QString path, files)
+    foreach(QUrl path, files)
     {
-        const KArchiveFile *localFile = rootDir->file(path);
+        const KArchiveFile *localFile = rootDir->file(path.toLocalFile());
         if (localFile) {
-            bool localCopyTo = localFile->copyTo(output);
-            outFiles <<  output + "/" + localFile->name();
+            bool localCopyTo = localFile->copyTo(mTempDir.toLocalFile());
+            outFiles <<  QUrl::fromLocalFile(mTempDir.toLocalFile() + "/" + localFile->name());
         }
     }
     mArchivePtr->close();
+
+    qDebug() << outFiles;
 
     return outFiles;
 }
@@ -143,23 +152,28 @@ QStringList ArchiveManager::extractFiles(const QString &archive, const QStringLi
 /**
  * Extract the archive in the path folder
  */
-void ArchiveManager::extractTo(const QString &archive, const QString &path)
+void ArchiveManager::extractTo(const QUrl &archive, const QUrl &path)
 {
-    KArchive *mArchivePtr = getKArchiveObject(archive);
+    KArchive *mArchivePtr = getKArchiveObject(archive.toLocalFile());
     if (!mArchivePtr) {
         return;
     }
 
     const KArchiveDirectory *rootDir = mArchivePtr->directory();
-    rootDir->copyTo(path, true);
+    rootDir->copyTo(path.toLocalFile(), true);
     mArchivePtr->close();
 
-    setCurrentDir("");
+    setCurrentDir(mNewArchiveDir);
 }
 
-bool ArchiveManager::isArchiveFile(const QString &path)
+bool ArchiveManager::isArchiveFile(const QUrl &path)
 {
-    QString mime = mimeType(path);
+    if (!path.isValid()) {
+        qWarning() << "invalid url:" << path;
+        return false;
+    }
+
+    QString mime = mimeType(path.toLocalFile());
     QList<QStringList> valuesList = archiveMimeTypes.values();
     foreach(QStringList value, valuesList)
     {
@@ -171,32 +185,32 @@ bool ArchiveManager::isArchiveFile(const QString &path)
     return false;
 }
 
-bool ArchiveManager::removeFile(const QString &name, const QString &parentFolder)
+bool ArchiveManager::removeFile(const QUrl &file)
 {
 
-    QFile fileToRemove(parentFolder + "/" + name);
+    QFile fileToRemove(file.toLocalFile());
     return fileToRemove.remove();
 }
 
-bool ArchiveManager::appendFolder(const QString &name, const QString &parentFolder)
+bool ArchiveManager::appendFolder(const QString &name, const QUrl &dir)
 {
 
-        const QString key = parentFolder.isEmpty() ? name : parentFolder + "/" + name;
-        qDebug() << "new folder:" << mNewArchiveDir + "/" + key;
-        return QDir().mkdir(mNewArchiveDir + "/" + key);
+        //const QString key = parentFolder.isEmpty() ? name : parentFolder + "/" + name;
+        QString out = dir.path().append("/").append(name);
+        qDebug() << "new folder:" << out;
+        return QDir().mkdir(out);
 }
 
-bool ArchiveManager::removeFolder(const QString &name, const QString &parentFolder)
+bool ArchiveManager::removeFolder(const QUrl &folder)
 {
-    QDir folder(parentFolder + "/" + name);
-    return folder.removeRecursively();
+    QDir f(folder.toLocalFile());
+    return f.removeRecursively();
 }
 
-QString ArchiveManager::save(const QString &archiveName, const QString &suffix)
+QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix)
 {
-    QString tmpPath = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
-    QString output = tmpPath + "/" + archiveName + "." + suffix;
-
+    QString output = mTempDir.path().append("/").append(archiveName).append(".").append(suffix);
+    qDebug() << "save to:" << output;
     KArchive* mArchivePtr;
     if (suffix == "zip") {
         mArchivePtr = new KZip(output);
@@ -207,16 +221,16 @@ QString ArchiveManager::save(const QString &archiveName, const QString &suffix)
     } else {
         qWarning() << "ERROR. COMPRESSED FILE TYPE UNKOWN " << output;
         setError(Errors::UNSUPPORTED_FILE_FORMAT);
-        return "";
+        return QUrl("");
     }
 
     if (!mArchivePtr->open(QIODevice::WriteOnly)) {
         setError(Errors::ERROR_WRITE);
         qWarning() << "could not open archive for writing";
-        return "";
+        return QUrl("");
     }
 
-    QDir dir(mNewArchiveDir);
+    QDir dir(mNewArchiveDir.toLocalFile());
     dir.setFilter( QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot );
     foreach(const QFileInfo dirItem, dir.entryInfoList() ) {
         if (dirItem.isDir()) {
@@ -229,7 +243,7 @@ QString ArchiveManager::save(const QString &archiveName, const QString &suffix)
     mArchivePtr->close();
     qDebug() << "archive copied to:" << output;
 
-    return output;
+    return QUrl::fromLocalFile(output);
 }
 
 bool ArchiveManager::copy(const QUrl &sourcePath, const QUrl &destination)

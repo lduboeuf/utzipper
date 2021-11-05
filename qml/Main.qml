@@ -42,27 +42,27 @@ MainView {
 
 
     function onImport(transfer) {
-        let destinationDir = ArchiveManager.tempDir;
-        if (pageStack.currentPage.objectName === "ArchiveWriter") {
-            destinationDir = ArchiveManager.newArchiveDir + "/" + ArchiveManager.currentDir;
-            moveFiles(transfer, destinationDir)
-        } else {
-            cleanup();
+        if (pageStack.currentPage.objectName !== "ArchiveWriter") {
+             cleanup();
             if (pageStack.depth > 1) {
                 pageStack.pop();
             }
-            if (!ArchiveManager.isArchiveFile(String(transfer.items[0].url))){
-                destinationDir = ArchiveManager.newArchiveDir + "/" + ArchiveManager.currentDir;
+
+            if (!ArchiveManager.isArchiveFile(transfer.items[0].url)){
                 const popup = PopupUtils.open(newArchiveDialog);
                 popup.confirmed.connect(function() {
-                    moveFiles(transfer, destinationDir)
+                    moveFiles(transfer, ArchiveManager.currentDir)
                     pageStack.push("qrc:/ArchiveWriter.qml")
                 });
 
             } else {
-                const files = moveFiles(transfer, destinationDir)
+                const files = moveFiles(transfer, ArchiveManager.tempDir)
                 pageStack.push("qrc:/ArchiveExplorer.qml", { archive: files[0]});
             }
+
+        } else {
+            // we are already in a new Archive mode, just add new files
+            moveFiles(transfer, ArchiveManager.currentDir)
         }
     }
 
@@ -73,15 +73,10 @@ MainView {
             console.log("move to:", destinationDir)
             // we use custom copy here since content-hub contentItem.move() will copy twice the file
             // files in .cache/HubIncoming will be deleted on transfer.finalize()
-            if (ArchiveManager.copy(item.url, 'file://' + destinationDir)){
+            if (ArchiveManager.copy(item.url, destinationDir)){
                 const fileName = item.url.toString().split('/').pop();
                 files.push(destinationDir + "/" + fileName);
             }
-
-//            if (item.move(destinationDir)){
-//                files.push(String(item.url).replace('file://', ''));
-
-//            }
         }
 
         transfer.finalize();
@@ -190,7 +185,8 @@ MainView {
             onPeerSelected: {
                 exportPicker.selectedItems = []
                 exportPicker.files.forEach( file => {
-                    exportPicker.selectedItems.push(resultComponent.createObject(mainView, {"url": "file://" + file}));
+                    console.log('export:', file)
+                    exportPicker.selectedItems.push(resultComponent.createObject(mainView, {"url": file}));
                 })
                 peer.selectionType = ContentTransfer.Single;
                 mainView.activeTransfer = peer.request();
@@ -281,7 +277,7 @@ MainView {
     }
 
     Component.onCompleted: {
-       //pageStack.push("qrc:/ArchiveExplorer.qml", { archive: '/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
-       //pageStack.push("qrc:/ArchiveWriter.qml", { archive: '/home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
+       //pageStack.push("qrc:/ArchiveExplorer.qml", { archive: 'file:///home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
+       //pageStack.push("qrc:/ArchiveWriter.qml", { archive: 'file:///home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
     }
 }

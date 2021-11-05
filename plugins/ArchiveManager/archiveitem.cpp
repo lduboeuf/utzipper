@@ -1,6 +1,6 @@
 #include "archiveitem.h"
 
-ArchiveItem::ArchiveItem(const QString& name, bool isDir, const QString& fullPath)
+ArchiveItem::ArchiveItem(const QString& name, bool isDir, const QUrl& fullPath)
     : mName(name), mIsDir(isDir), mFullPath(fullPath) {
 }
 
@@ -12,11 +12,11 @@ bool ArchiveItem::isDir() const {
     return mIsDir;
 }
 
-QString ArchiveItem::fullPath() const {
+QUrl ArchiveItem::fullPath() const {
     return mFullPath;
 }
 
-void ArchiveItem::setFullPath(const QString &fullPath)
+void ArchiveItem::setFullPath(const QUrl &fullPath)
 {
     mFullPath = fullPath;
 }

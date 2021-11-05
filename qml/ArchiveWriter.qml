@@ -36,7 +36,7 @@ Page {
                 iconName: "close"
                 onTriggered: {
                     pageStack.pop()
-                    ArchiveManager.currentDir = ""
+                    ArchiveManager.currentDir = folderModel.rootFolder
                 }
             }
         ]
@@ -61,7 +61,7 @@ Page {
             actions: [
                 Action {
                     iconName: "keyboard-caps-disabled"
-                    text: ArchiveManager.currentDir
+                    text: ArchiveManager.currentName
                     enabled: ArchiveManager.currentDir !== ""
                     onTriggered: ArchiveManager.currentDir = root.navigation.pop()
                 },
@@ -69,7 +69,7 @@ Page {
                     iconName: "go-home"
                     text: i18n.tr("home")
                     onTriggered: {
-                        ArchiveManager.currentDir = ""
+                        ArchiveManager.currentDir = folderModel.rootFolder
                         root.navigation = []
                     }
                 }
@@ -128,8 +128,9 @@ Page {
 
     FolderListModel {
         id: folderModel
-        rootFolder: "file://" + ArchiveManager.newArchiveDir
-        folder: "file://" +  ArchiveManager.newArchiveDir + "/" + ArchiveManager.currentDir
+        rootFolder: ArchiveManager.newArchiveDir
+        folder: ArchiveManager.currentDir
+        onFolderChanged: console.log('folder:', folder);
         showDirsFirst: true
         showHidden: true
     }
@@ -167,11 +168,11 @@ Page {
                         iconName: "delete"
                         text: i18n.tr("delete")
                         onTriggered: {
-                            const parentFolder = String(folderModel.folder).replace('file://', '')
+                            console.log('kikou remove:', fileURL)
                             if (fileIsDir) {
-                                ArchiveManager.removeFolder(fileName, parentFolder)
+                                ArchiveManager.removeFolder(fileURL)
                             }else {
-                                ArchiveManager.removeFile(fileName, parentFolder)
+                                ArchiveManager.removeFile(fileURL)
                             }
                         }
                     }
@@ -183,11 +184,12 @@ Page {
                     tmpNav.push(ArchiveManager.currentDir)
                     root.navigation = tmpNav
 
-                    if (ArchiveManager.currentDir !== "") {
-                        ArchiveManager.currentDir = ArchiveManager.currentDir + "/" + fileName
-                    } else {
-                        ArchiveManager.currentDir = fileName
-                    }
+                   // if (ArchiveManager.currentDir !== "") {
+                        ArchiveManager.currentDir = Qt.resolvedUrl(ArchiveManager.currentDir.toString() + "/" + fileName)
+                    //}
+//                    else {
+//                        ArchiveManager.currentDir = fileName
+//                    }
                     ListView.view.ViewItems.dragMode = false
 
                 }

@@ -27,10 +27,11 @@
 class ArchiveManager: public QObject {
     Q_OBJECT
 
-    Q_PROPERTY(QString currentDir READ currentDir WRITE setCurrentDir NOTIFY currentDirChanged)
+    Q_PROPERTY(QUrl currentDir READ currentDir WRITE setCurrentDir NOTIFY currentDirChanged)
+    Q_PROPERTY(QString currentName READ currentName NOTIFY currentNameChanged)
     Q_PROPERTY(Errors error READ error NOTIFY errorChanged)
-    Q_PROPERTY(QString tempDir READ tempDir NOTIFY tempDirChanged)
-    Q_PROPERTY(QString newArchiveDir READ newArchiveDir NOTIFY newArchiveDirChanged)
+    Q_PROPERTY(QUrl tempDir READ tempDir NOTIFY tempDirChanged)
+    Q_PROPERTY(QUrl newArchiveDir READ newArchiveDir NOTIFY newArchiveDirChanged)
 
 public:
     ArchiveManager(QObject *parent = 0);
@@ -46,22 +47,23 @@ public:
     Q_ENUM(Errors)
 
     bool hasFiles() const;
-    QString currentDir() const;
-    void setCurrentDir(const QString &currentDir);
-    QString tempDir() const;
-    void setTempDir(const QString &path);
-    QString newArchiveDir() const;
-    void setNewArchiveDir(const QString &path);
+    QUrl currentDir() const;
+    void setCurrentDir(const QUrl &currentDir);
+    QString currentName() const;
+    QUrl tempDir() const;
+    void setTempDir(const QUrl &path);
+    QUrl newArchiveDir() const;
+    void setNewArchiveDir(const QUrl &path);
     Errors error() const;
 
     Q_INVOKABLE void clear();
-    Q_INVOKABLE QStringList extractFiles(const QString &archive, const QStringList &files);
-    Q_INVOKABLE void extractTo(const QString &archive, const QString &path);
-    Q_INVOKABLE bool isArchiveFile(const QString &path);
-    Q_INVOKABLE bool removeFile(const QString &name, const QString &parentFolder);
-    Q_INVOKABLE bool appendFolder(const QString &name, const QString &parentFolder);
-    Q_INVOKABLE bool removeFolder(const QString &name, const QString &parentFolder);
-    Q_INVOKABLE QString save(const QString &archiveName, const QString &suffix);
+    Q_INVOKABLE QList<QUrl> extractFiles(const QUrl &archive, const QList<QUrl> &files);
+    Q_INVOKABLE void extractTo(const QUrl &archive, const QUrl &path);
+    Q_INVOKABLE bool isArchiveFile(const QUrl &path);
+    Q_INVOKABLE bool removeFile(const QUrl &file);
+    Q_INVOKABLE bool appendFolder(const QString &name, const QUrl &dir);
+    Q_INVOKABLE bool removeFolder(const QUrl &folder);
+    Q_INVOKABLE QUrl save(const QString &archiveName, const QString &suffix);
     Q_INVOKABLE bool copy(const QUrl &sourcePath, const QUrl &destination);
     Q_INVOKABLE bool move(const QUrl &sourcePath, const QUrl &destination);
     Q_INVOKABLE QString iconName(const QString &fileName) const;
@@ -69,6 +71,7 @@ public:
 
 Q_SIGNALS:
     void currentDirChanged();
+    void currentNameChanged();
     void errorChanged();
     void newArchiveDirChanged();
     void tempDirChanged();
@@ -77,9 +80,9 @@ protected Q_SLOTS:
     void setError(const Errors& error);
 
 private:
-    QString mCurrentDir;
-    QString mNewArchiveDir;
-    QString mTempDir;
+    QUrl mCurrentDir;
+    QUrl mNewArchiveDir;
+    QUrl mTempDir;
 
     Errors mError;
     QMap<QString, QStringList> archiveMimeTypes;

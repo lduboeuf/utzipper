@@ -27,7 +27,7 @@ class ArchiveReader: public QAbstractListModel {
     Q_OBJECT
 
     Q_PROPERTY(QString currentDir READ currentDir WRITE setCurrentDir NOTIFY currentDirChanged)
-    Q_PROPERTY(QString archive READ archive WRITE setArchive NOTIFY archiveChanged)
+    Q_PROPERTY(QUrl archive READ archive WRITE setArchive NOTIFY archiveChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
     Q_PROPERTY(bool hasFiles READ hasFiles NOTIFY hasFilesChanged)
     Q_PROPERTY(Errors error READ error NOTIFY errorChanged)
@@ -56,8 +56,8 @@ public:
     int rowCount(const QModelIndex& parent=QModelIndex()) const;
     QVariant data(const QModelIndex& index, int role) const;
 
-    QString archive() const;
-    void setArchive(const QString &path);
+    QUrl archive() const;
+    void setArchive(const QUrl &path);
     QString name() const;
     bool hasFiles() const;
     QString currentDir() const;
@@ -84,7 +84,7 @@ protected Q_SLOTS:
 
 private:
     QString mCurrentDir;
-    QString mArchive;
+    QUrl mArchive;
     QString mName;
     QString mNewArchiveDir;
     bool mHasFiles;
@@ -96,7 +96,7 @@ private:
     KArchive* getKArchiveObject(const QString &filePath);
 
     void cleanDirectory(const QString &path);
-    void setTempDir(const QString &path);
+//    void setTempDir(const QString &path);
     void extractArchive(const KArchiveDirectory *dir, const QString &path);
 };
 

@@ -42,16 +42,17 @@ ArchiveReader::~ArchiveReader()
 {
 }
 
-QString ArchiveReader::archive() const
+QUrl ArchiveReader::archive() const
 {
     return mArchive;
 }
 
-void ArchiveReader::setArchive(const QString &path)
+void ArchiveReader::setArchive(const QUrl &path)
 {
     if (mArchive == path) {
         return;
     }
+    qDebug() << "new archive:" << path;
     mArchive = path;
     Q_EMIT archiveChanged();
 }
@@ -179,7 +180,7 @@ void ArchiveReader::extract()
 
     setError(Errors::NO_ERRORS);
 
-    KArchive *mArchivePtr = getKArchiveObject(mArchive);
+    KArchive *mArchivePtr = getKArchiveObject(mArchive.toLocalFile());
     if (!mArchivePtr) {
         return;
     }
@@ -229,7 +230,7 @@ void ArchiveReader::extractArchive(const KArchiveDirectory *dir, const QString &
     for (; it != entries.end(); ++it)
     {
         const KArchiveEntry* entry = dir->entry((*it));
-        ArchiveItem archiveItem(entry->name(), entry->isDirectory(), path + entry->name());
+        ArchiveItem archiveItem(entry->name(), entry->isDirectory(), QUrl::fromLocalFile(path + entry->name()));
         archiveItems << archiveItem;
 
         if (entry->isDirectory()) {
