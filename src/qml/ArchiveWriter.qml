@@ -51,7 +51,7 @@ Page {
             ActionBar {
 
             id: actionBar
-
+            enabled: !listView.ViewItems.dragMode
             anchors {
                 left: parent.left
                 right: parent.right

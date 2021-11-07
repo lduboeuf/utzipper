@@ -23,15 +23,23 @@
 #include <QStandardPaths>
 #include <QDir>
 
+#include "archivereader.h"
+#include "archivemanager.h"
+
 int main(int argc, char *argv[])
 {
     QGuiApplication *app = new QGuiApplication(argc, (char**)argv);
     app->setApplicationName("utzip.lduboeuf");
 
+    qmlRegisterType<ArchiveReader>("ArchiveManager",1, 0, "ArchiveReader");
+    qmlRegisterSingletonType<ArchiveManager>("ArchiveManager", 1, 0, "ArchiveManager", [](QQmlEngine*, QJSEngine*) -> QObject* { return new ArchiveManager; });
+
+
     QQuickView *view = new QQuickView();
     view->setSource(QUrl("qrc:/Main.qml"));
     view->setResizeMode(QQuickView::SizeRootObjectToView);
     view->show();
+
 
     return app->exec();
 }

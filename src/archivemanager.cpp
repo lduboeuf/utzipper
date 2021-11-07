@@ -95,7 +95,7 @@ void ArchiveManager::setNewArchiveDir(const QUrl &path)
     if (mNewArchiveDir != path) {
         mNewArchiveDir = path;
         mCurrentDir = path;
-        qDebug() << "tempDir" << path;
+        qDebug() << "mNewArchiveDir" << path;
         Q_EMIT newArchiveDirChanged();
         Q_EMIT currentDirChanged();
     }

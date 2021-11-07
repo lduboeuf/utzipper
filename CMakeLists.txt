@@ -8,6 +8,9 @@ find_package(Qt5Core REQUIRED)
 find_package(Qt5Qml REQUIRED)
 find_package(Qt5Quick REQUIRED)
 find_package(Qt5QuickControls2 REQUIRED)
+find_package(ECM NO_MODULE)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_FIND_MODULE_DIR})
+find_package(KF5 REQUIRED COMPONENTS Archive)
 
 execute_process(
     COMMAND dpkg-architecture -qDEB_HOST_MULTIARCH
@@ -46,18 +49,26 @@ install(FILES ${PROJECT_NAME}.apparmor DESTINATION ${DATA_DIR})
 install(FILES ${PROJECT_NAME}-contenthub.json DESTINATION ${DATA_DIR})
 install(FILES assets/logo.svg DESTINATION assets)
 
-qt5_add_resources(QT_RESOURCES qml/qml.qrc)
-qt5_add_resources(QT_RESOURCES assets/assets.qrc)
+#qt5_add_resources(QT_RESOURCES qml/qml.qrc)
+#qt5_add_resources(QT_RESOURCES assets/assets.qrc)
 
-add_executable(${PROJECT_NAME} main.cpp ${QT_RESOURCES})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELEASE -s)
+#set(
+#    SRC
+#    main.cpp
+#    archiveitem.cpp
+#    archivemanager.cpp
+#    archivereader.cpp
+#)
+
+#add_executable(${PROJECT_NAME} ${SRC} ${QT_RESOURCES})
+#set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELEASE -s)
 #target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${QUAZIP_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} Qt5::Gui Qt5::Qml Qt5::Quick Qt5::QuickControls2
-    )
-install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
+#target_link_libraries(${PROJECT_NAME} Qt5::Gui Qt5::Qml Qt5::Quick Qt5::QuickControls2 KF5::Archive
+#    )
+#install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # Translations
-file(GLOB_RECURSE I18N_SRC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/po qml/*.qml qml/*.js)
+file(GLOB_RECURSE I18N_SRC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/po src/qml/*.qml src/qml/*.js)
 list(APPEND I18N_SRC_FILES ${DESKTOP_FILE_NAME}.in.h)
 
 find_program(INTLTOOL_MERGE intltool-merge)
@@ -76,9 +87,11 @@ add_custom_target(${DESKTOP_FILE_NAME} ALL
 )
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${DESKTOP_FILE_NAME} DESTINATION ${DATA_DIR})
+#install(FILES assets/logo.svg DESTINATION /assets)
 
 add_subdirectory(po)
-add_subdirectory(plugins)
+add_subdirectory(src)
+#add_subdirectory(plugins)
 
 # Make source files visible in qtcreator
 file(GLOB_RECURSE PROJECT_SRC_FILES

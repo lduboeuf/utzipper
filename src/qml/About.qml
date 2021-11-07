@@ -21,7 +21,7 @@ Page {
             anchors.horizontalCenter: parent.horizontalCenter
             width: units.gu(12)
             fillMode: Image.PreserveAspectFit
-            source: "../assets/logo.svg"
+            source: "../../assets/logo.svg"
         }
 
         Label {
