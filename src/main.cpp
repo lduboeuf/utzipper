@@ -16,12 +16,8 @@
 
 #include <QGuiApplication>
 #include <QCoreApplication>
-#include <QDirIterator>
 #include <QUrl>
-#include <QString>
 #include <QQuickView>
-#include <QStandardPaths>
-#include <QDir>
 
 #include "archivereader.h"
 #include "archivemanager.h"
@@ -39,7 +35,6 @@ int main(int argc, char *argv[])
     view->setSource(QUrl("qrc:/Main.qml"));
     view->setResizeMode(QQuickView::SizeRootObjectToView);
     view->show();
-
 
     return app->exec();
 }
