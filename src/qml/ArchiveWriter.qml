@@ -5,7 +5,7 @@ import Ubuntu.Content 1.3
 import Ubuntu.Components.Popups 1.3
 import Qt.labs.folderlistmodel 2.12
 
-import ArchiveManager 1.0
+import utzip.private 1.0
 
 Page {
     id: root

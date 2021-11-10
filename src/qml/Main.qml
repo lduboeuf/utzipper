@@ -21,7 +21,7 @@ import Ubuntu.Content 1.3
 import Qt.labs.settings 1.0
 import Ubuntu.Components.Popups 1.3
 
-import ArchiveManager 1.0
+import utzip.private 1.0
 
 MainView {
     id: mainView

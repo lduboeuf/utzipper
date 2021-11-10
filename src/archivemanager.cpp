@@ -39,7 +39,7 @@ ArchiveManager::ArchiveManager(QObject *parent) : QObject(parent), mError(NO_ERR
 
     // working directory for new archives
     QString output = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/newArchive";
-    QDir().mkdir(output);
+    //QDir::mkpath(output);
     setNewArchiveDir(QUrl::fromLocalFile(output));
 
     // temp dir
