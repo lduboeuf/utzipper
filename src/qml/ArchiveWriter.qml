@@ -36,7 +36,7 @@ Page {
                 iconName: "close"
                 onTriggered: {
                     pageStack.pop()
-                    ArchiveManager.currentDir = folderModel.rootFolder
+                    ArchiveManager.currentDir = ArchiveManager.newArchiveDir
                 }
             }
         ]
@@ -62,14 +62,14 @@ Page {
                 Action {
                     iconName: "keyboard-caps-disabled"
                     text: ArchiveManager.currentName
-                    enabled: ArchiveManager.currentDir !== ""
+                    enabled: ArchiveManager.currentDir !== ArchiveManager.newArchiveDir
                     onTriggered: ArchiveManager.currentDir = root.navigation.pop()
                 },
                 Action {
                     iconName: "go-home"
                     text: i18n.tr("home")
                     onTriggered: {
-                        ArchiveManager.currentDir = folderModel.rootFolder
+                        ArchiveManager.currentDir = ArchiveManager.newArchiveDir
                         root.navigation = []
                     }
                 }
@@ -184,12 +184,7 @@ Page {
                     tmpNav.push(ArchiveManager.currentDir)
                     root.navigation = tmpNav
 
-                   // if (ArchiveManager.currentDir !== "") {
-                        ArchiveManager.currentDir = Qt.resolvedUrl(ArchiveManager.currentDir.toString() + "/" + fileName)
-                    //}
-//                    else {
-//                        ArchiveManager.currentDir = fileName
-//                    }
+                    ArchiveManager.currentDir = Qt.resolvedUrl(ArchiveManager.currentDir.toString() + "/" + fileName)
                     ListView.view.ViewItems.dragMode = false
 
                 }
