@@ -15,11 +15,11 @@
  */
 
 import QtQuick 2.7
-import Ubuntu.Components 1.3
+import Lomiri.Components 1.3
 import QtQuick.Layouts 1.3
-import Ubuntu.Content 1.3
+import Lomiri.Content 1.3
 import Qt.labs.settings 1.0
-import Ubuntu.Components.Popups 1.3
+import Lomiri.Components.Popups 1.3
 
 import utzip.private 1.0
 
@@ -277,7 +277,7 @@ MainView {
     }
 
     Component.onCompleted: {
-       //pageStack.push("qrc:/ArchiveExplorer.qml", { archive: 'file:///home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
+       pageStack.push("qrc:/ArchiveExplorer.qml", { archive: 'file:///home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
        //pageStack.push("qrc:/ArchiveWriter.qml", { archive: 'file:///home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
     }
 }
