@@ -82,7 +82,7 @@ Page {
                 width: label1.width + icon1.width + units.gu(3)
                 height: parent.height
                 Rectangle {
-                    color: UbuntuColors.slate
+                    color: LomiriColors.slate
                     opacity: 0.1
                     anchors.fill: parent
                     visible: button1.pressed
@@ -232,7 +232,7 @@ Page {
         height: width
         visible: listView.count === 0
         Rectangle {
-            color: UbuntuColors.slate
+            color: LomiriColors.slate
             opacity: 0.1
             anchors.fill: parent
             visible: importBtn.pressed

@@ -48,6 +48,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/manifest.json DESTINATION ${CMAKE_INST
 install(FILES ${PROJECT_NAME}.apparmor DESTINATION ${DATA_DIR})
 install(FILES ${PROJECT_NAME}-contenthub.json DESTINATION ${DATA_DIR})
 install(FILES assets/logo.svg DESTINATION assets)
+install(FILES assets/logo.png DESTINATION assets)
 
 #qt5_add_resources(QT_RESOURCES qml/qml.qrc)
 #qt5_add_resources(QT_RESOURCES assets/assets.qrc)
@@ -87,7 +88,6 @@ add_custom_target(${DESKTOP_FILE_NAME} ALL
 )
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${DESKTOP_FILE_NAME} DESTINATION ${DATA_DIR})
-#install(FILES assets/logo.svg DESTINATION /assets)
 
 add_subdirectory(po)
 add_subdirectory(src)

@@ -92,7 +92,7 @@ Page {
                 width: label.width + icon.width + units.gu(3)
                 height: parent.height
                 Rectangle {
-                    color: UbuntuColors.slate
+                    color: LomiriColors.slate
                     opacity: 0.1
                     anchors.fill: parent
                     visible: button.pressed

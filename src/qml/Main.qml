@@ -277,7 +277,8 @@ MainView {
     }
 
     Component.onCompleted: {
-       pageStack.push("qrc:/ArchiveExplorer.qml", { archive: 'file:///home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
+       // for test
+       //pageStack.push("qrc:/ArchiveExplorer.qml", { archive: 'file:///home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
        //pageStack.push("qrc:/ArchiveWriter.qml", { archive: 'file:///home/lduboeuf/.local/share/utzip.lduboeuf/utzip.tar.xz'});
     }
 }
