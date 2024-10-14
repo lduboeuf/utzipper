@@ -124,7 +124,7 @@ KArchive *ArchiveReader::getKArchiveObject(const QString &filePath)
 
     QFileInfo info(filePath);
     if (!info.isReadable()) {
-        qWarning() << "Cannot read " << filePath;
+        qWarning() << "ArchiveReader: Cannot read " << filePath;
         setError(Errors::ERROR_READ);
         return nullptr;
     }
@@ -145,13 +145,13 @@ KArchive *ArchiveReader::getKArchiveObject(const QString &filePath)
     }
 
     if (!kArch) {
-        qWarning() << "Cannot open " << filePath;
+        qWarning() << "Cannot open " << filePath << kArch->errorString();
         setError(Errors::UNSUPPORTED_FILE_FORMAT);
         return nullptr;
     }
     // Open the archive
     if (!kArch->open(QIODevice::ReadOnly)) {
-        qWarning() << "Cannot open " << filePath;
+        qWarning() << "Cannot open " << filePath << kArch->errorString();
         setError(Errors::ERROR_READ);
         return nullptr;
     }
