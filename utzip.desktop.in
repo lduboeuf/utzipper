@@ -1,7 +1,7 @@
 [Desktop Entry]
 _Name=UT zipper
 Exec=utzip %U
-Icon=assets/logo.png
+Icon=assets/logo.svg
 Terminal=false
 Type=Application
 X-Ubuntu-Touch=true

@@ -1,0 +1,11 @@
+clickable_minimum_required: 8.8.0
+builder: cmake
+skip_review: true
+kill: utzip
+dependencies_host:
+  - extra-cmake-modules
+  - libxcb-cursor0
+dependencies_target:
+  - libkf5archive-dev
+install_lib:
+  - "/usr/lib/${ARCH_TRIPLET}/libKF5Archive.so.*"
