@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-27 14:47+0000\n"
+"POT-Creation-Date: 2026-05-05 17:04+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -37,7 +37,7 @@ msgstr ""
 msgid "up"
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:84 ../src/qml/ArchiveWriter.qml:70
+#: ../src/qml/ArchiveExplorer.qml:84 ../src/qml/ArchiveWriter.qml:72
 msgid "home"
 msgstr ""
 
@@ -45,63 +45,69 @@ msgstr ""
 msgid "select all"
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:140 ../src/qml/ArchiveWriter.qml:224
+#: ../src/qml/ArchiveExplorer.qml:140 ../src/qml/ArchiveWriter.qml:226
 msgid "Oups, something went wrong"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:33
+#: ../src/qml/ArchiveWriter.qml:35
 msgid "new Archive"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:115
+#: ../src/qml/ArchiveWriter.qml:117
 msgid "add files"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:121
+#: ../src/qml/ArchiveWriter.qml:123
 msgid "new folder"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:169
+#: ../src/qml/ArchiveWriter.qml:171
 msgid "delete"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:253
+#: ../src/qml/ArchiveWriter.qml:255
 msgid "Import files"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:264
+#: ../src/qml/ArchiveWriter.qml:266
 msgid "Export archive"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:271
+#: ../src/qml/ArchiveWriter.qml:273
 msgid "my archive name"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:281
+#: ../src/qml/ArchiveWriter.qml:283
 msgid "format"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:288 ../src/qml/ArchiveWriter.qml:335
+#: ../src/qml/ArchiveWriter.qml:292
+msgid ""
+"This format is read-only for now. Please choose zip, tar, tar.gz, tar.bz2, "
+"tar.xz or ar."
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:298 ../src/qml/ArchiveWriter.qml:347
 msgid "cancel"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:295
+#: ../src/qml/ArchiveWriter.qml:305
 msgid "save"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:313
+#: ../src/qml/ArchiveWriter.qml:325
 msgid "Add folder"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:319
+#: ../src/qml/ArchiveWriter.qml:331
 msgid "Folder name"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:326
+#: ../src/qml/ArchiveWriter.qml:338
 msgid "new folder..."
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:342
+#: ../src/qml/ArchiveWriter.qml:354
 msgid "ok"
 msgstr ""
 

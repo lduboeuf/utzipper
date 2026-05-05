@@ -15,27 +15,26 @@
  */
 
 #include <QDebug>
-#include <QMimeDatabase>
 #include <QStandardPaths>
 #include <QUrl>
 #include <QDir>
 #include <QDirIterator>
-#include <KAr>
-#include <KTar>
-#include <KZip>
-#include <K7Zip>
-#include <KAr>
+#include <algorithm>
+#include <archive.h>
+#include <archive_entry.h>
 
 #include "archivereader.h"
 #include "archiveitem.h"
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+  #define SKIP_EMPTY Qt::SkipEmptyParts
+#else
+  #define SKIP_EMPTY QString::SkipEmptyParts
+#endif
+
 ArchiveReader::ArchiveReader(QObject *parent) : QAbstractListModel(parent), mError(NO_ERRORS), mHasFiles(false) {
     connect(this, SIGNAL(archiveChanged()),this, SLOT(extract()));
     connect(this, SIGNAL(rowCountChanged()),this, SLOT(onRowCountChanged()));
-
-    archiveMimeTypes.insert("zip", { "application/zip", "application/x-zip", "application/x-zip-compressed" });
-    archiveMimeTypes.insert("tar", { "application/x-compressed-tar", "application/x-bzip-compressed-tar", "application/x-lzma-compressed-tar", "application/x-xz-compressed-tar", "application/x-gzip", "application/x-bzip", "application/x-lzma", "application/x-xz" });
-    archiveMimeTypes.insert("7z", { "application/x-7z-compressed" });
 }
 
 ArchiveReader::~ArchiveReader()
@@ -112,53 +111,6 @@ bool ArchiveReader::hasData() const
     return mArchiveItems.count() > 0;
 }
 
-QString ArchiveReader::mimeType( const QString &filePath ) const{
-    QMimeType mimeType = QMimeDatabase().mimeTypeForFile(filePath);
-    qDebug() << "mimeType:" << mimeType.iconName() << mimeType.genericIconName();
-    return mimeType.name();
-}
-
-KArchive *ArchiveReader::getKArchiveObject(const QString &filePath)
-{
-    KArchive *kArch = nullptr;
-
-    QFileInfo info(filePath);
-    if (!info.isReadable()) {
-        qWarning() << "ArchiveReader: Cannot read " << filePath;
-        setError(Errors::ERROR_READ);
-        return nullptr;
-    }
-
-    mName = info.fileName();
-    Q_EMIT nameChanged();
-
-    QString mime = mimeType(filePath);
-
-    if (archiveMimeTypes["zip"].contains(mime)) {
-        kArch = new KZip(filePath);
-    } else if (archiveMimeTypes["tar"].contains(mime)) {
-        kArch = new KTar(filePath);
-    }else if (archiveMimeTypes["7z"].contains(mime)){
-        kArch = new K7Zip(filePath);
-    } else {
-        qWarning() << "ERROR. COMPRESSED FILE TYPE UNKOWN " << filePath;
-    }
-
-    if (!kArch) {
-        qWarning() << "Cannot open " << filePath << kArch->errorString();
-        setError(Errors::UNSUPPORTED_FILE_FORMAT);
-        return nullptr;
-    }
-    // Open the archive
-    if (!kArch->open(QIODevice::ReadOnly)) {
-        qWarning() << "Cannot open " << filePath << kArch->errorString();
-        setError(Errors::ERROR_READ);
-        return nullptr;
-    }
-
-    return kArch;
-}
-
 void ArchiveReader::cleanDirectory(const QString &path)
 {
 
@@ -180,20 +132,42 @@ void ArchiveReader::extract()
 
     setError(Errors::NO_ERRORS);
 
-    KArchive *mArchivePtr = getKArchiveObject(mArchive.toLocalFile());
-    if (!mArchivePtr) {
+    QFileInfo info(mArchive.toLocalFile());
+    if (!info.isReadable()) {
+        qWarning() << "ArchiveReader: Cannot read " << mArchive.toLocalFile();
+        setError(Errors::ERROR_READ);
         return;
     }
 
-    // Take the root folder from the archive and create a KArchiveDirectory object.
-    // KArchiveDirectory represents a directory in a KArchive.
-    const KArchiveDirectory *rootDir = mArchivePtr->directory();
+    mName = info.fileName();
+    Q_EMIT nameChanged();
 
-    // We can extract all contents from a KArchiveDirectory to a destination.
-    // recursive true will also extract subdirectories.
-    extractArchive(rootDir, "");
+    beginResetModel();
+    mCurrentArchiveItems.clear();
+    mArchiveItems.clear();
+    endResetModel();
 
-    mArchivePtr->close();
+    ArchiveReadHandle handle;
+    QString errorMessage;
+    if (!openArchiveForReading(mArchive.toLocalFile(), handle, &errorMessage)) {
+        qWarning() << "Cannot open archive" << mArchive.toLocalFile() << errorMessage;
+        setError(Errors::UNSUPPORTED_FILE_FORMAT);
+        return;
+    }
+
+    struct archive_entry *entry = nullptr;
+    while (archive_read_next_header(handle.reader, &entry) == ARCHIVE_OK) {
+        const char *entryPath = archive_entry_pathname(entry);
+        if (entryPath) {
+            const bool isDir = archive_entry_filetype(entry) == AE_IFDIR;
+            addArchiveEntry(QString::fromUtf8(entryPath), isDir);
+        }
+        archive_read_data_skip(handle.reader);
+    }
+
+    closeArchiveReader(handle);
+    sortArchiveItems();
+
     Q_EMIT modelChanged();
     setCurrentDir("");
 }
@@ -222,33 +196,63 @@ void ArchiveReader::setError(const ArchiveReader::Errors &error)
     Q_EMIT errorChanged();
 }
 
-void ArchiveReader::extractArchive(const KArchiveDirectory *dir, const QString &path)
+void ArchiveReader::addArchiveEntry(const QString &entryPath, bool isDir)
 {
-    const QStringList entries = dir->entries();
-    QStringList::const_iterator it = entries.constBegin();
-    QList<ArchiveItem> archiveItems;
-    for (; it != entries.end(); ++it)
-    {
-        const KArchiveEntry* entry = dir->entry((*it));
-        ArchiveItem archiveItem(entry->name(), entry->isDirectory(), QUrl::fromLocalFile(path + entry->name()));
-        archiveItems << archiveItem;
-
-        if (entry->isDirectory()) {
-            extractArchive((KArchiveDirectory *)entry, path+(*it)+'/');
-        }
+    QString normalized = QDir::cleanPath(entryPath);
+    if (normalized == ".") {
+        return;
     }
-    QString key(path);
-    key.chop(1); //remove last "/"
+    while (normalized.startsWith('/')) {
+        normalized.remove(0, 1);
+    }
+    while (normalized.endsWith('/')) {
+        normalized.chop(1);
+    }
+    if (normalized.isEmpty()) {
+        return;
+    }
 
-    //put directory on top and sort by name
-    std::sort(archiveItems.begin() , archiveItems.end(), [this]( const ArchiveItem& test1 , const ArchiveItem& test2 )->bool {
-        if (test1.isDir() != test2.isDir()) {
-            return test1.isDir();
-        } else {
-            return test1.name().compare(test2.name(), Qt::CaseInsensitive) < 0;
+    const QStringList parts = normalized.split('/', SKIP_EMPTY);
+    QString parentPath;
+    for (int i = 0; i < parts.count(); ++i) {
+        const QString &part = parts.at(i);
+        const QString currentPath = parentPath.isEmpty() ? part : parentPath + "/" + part;
+        const bool partIsDir = (i < parts.count() - 1) || isDir;
+
+        QList<ArchiveItem> &children = mArchiveItems[parentPath];
+        bool exists = false;
+        const QList<ArchiveItem> existingChildren = children;
+        for (const ArchiveItem &item : existingChildren) {
+            if (item.name() == part && item.isDir() == partIsDir) {
+                exists = true;
+                break;
+            }
         }
-    });
-    mArchiveItems.insert(key, archiveItems);
+        if (!exists) {
+            children << ArchiveItem(part, partIsDir, QUrl::fromLocalFile(currentPath));
+        }
+
+        if (partIsDir && !mArchiveItems.contains(currentPath)) {
+            mArchiveItems.insert(currentPath, {});
+        }
+        parentPath = currentPath;
+    }
+}
+
+void ArchiveReader::sortArchiveItems()
+{
+    for (auto it = mArchiveItems.begin(); it != mArchiveItems.end(); ++it) {
+        auto &items = it.value();
+        std::sort(items.begin(), items.end(), [](const ArchiveItem &left, const ArchiveItem &right) {
+            if (left.isDir() != right.isDir()) {
+                return left.isDir();
+            }
+            return left.name().compare(right.name(), Qt::CaseInsensitive) < 0;
+        });
+    }
+    if (!mArchiveItems.contains("")) {
+        mArchiveItems.insert("", {});
+    }
 }
 
 QVariantMap ArchiveReader::get(int i) const

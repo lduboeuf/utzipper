@@ -19,9 +19,9 @@
 
 #include <QAbstractListModel>
 #include <QObject>
-#include <KArchive>
 
 #include "archiveitem.h"
+#include "archiveutils.h"
 
 class ArchiveReader: public QAbstractListModel {
     Q_OBJECT
@@ -90,14 +90,11 @@ private:
     bool mHasFiles;
     Errors mError;
     QMap<QString, QList<ArchiveItem>> mArchiveItems;
-    QMap<QString, QStringList> archiveMimeTypes;
     QList<ArchiveItem> mCurrentArchiveItems;
-    QString mimeType( const QString &filePath ) const;
-    KArchive* getKArchiveObject(const QString &filePath);
+    void addArchiveEntry(const QString &entryPath, bool isDir);
+    void sortArchiveItems();
 
     void cleanDirectory(const QString &path);
-//    void setTempDir(const QString &path);
-    void extractArchive(const KArchiveDirectory *dir, const QString &path);
 };
 
 #endif

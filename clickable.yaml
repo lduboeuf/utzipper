@@ -1,11 +1,18 @@
 clickable_minimum_required: 8.8.0
 builder: cmake
+framework: ubuntu-touch-24.04-1.x
 skip_review: true
 kill: utzip
 dependencies_host:
   - extra-cmake-modules
-  - libxcb-cursor0
+#  - libxcb-cursor0
+  - libarchive-dev
 dependencies_target:
-  - libkf5archive-dev
+  - libarchive13t64
+
 install_lib:
-  - "/usr/lib/${ARCH_TRIPLET}/libKF5Archive.so.*"
+  - "/usr/lib/${ARCH_TRIPLET}/libarchive.so.*"
+  - "/usr/lib/${ARCH_TRIPLET}/libnettle.so.*"
+  - "/usr/lib/${ARCH_TRIPLET}/libhogweed.so.*"
+  - "/usr/lib/${ARCH_TRIPLET}/libgmp.so.*"
+

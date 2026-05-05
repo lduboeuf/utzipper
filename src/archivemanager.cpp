@@ -20,22 +20,71 @@
 #include <QUrl>
 #include <QDir>
 #include <QDirIterator>
-#include <KAr>
-#include <KTar>
-#include <KZip>
-#include <K7Zip>
-#include <KAr>
+#include <QFile>
+#include <QFileInfo>
+#include <QSet>
+#include <QStringList>
+#include <archive.h>
+#include <archive_entry.h>
 
 #include "archivemanager.h"
 #include "archiveitem.h"
 
+namespace {
+
+QString normalizeArchivePath(const QString &rawPath)
+{
+    QString normalized = QDir::cleanPath(rawPath);
+    if (normalized == ".") {
+        return QString();
+    }
+    while (normalized.startsWith('/')) {
+        normalized.remove(0, 1);
+    }
+    return normalized;
+}
+
+bool configureArchiveWriter(struct archive *writer, const QString &suffix)
+{
+    if (suffix == "zip") {
+        return archive_write_set_format_zip(writer) == ARCHIVE_OK;
+    }
+
+    if (suffix == "tar") {
+        return archive_write_set_format_pax_restricted(writer) == ARCHIVE_OK;
+    }
+
+    if (suffix == "tar.gz") {
+        return archive_write_add_filter_gzip(writer) == ARCHIVE_OK
+            && archive_write_set_format_pax_restricted(writer) == ARCHIVE_OK;
+    }
+
+    if (suffix == "tar.bz2") {
+        return archive_write_add_filter_bzip2(writer) == ARCHIVE_OK
+            && archive_write_set_format_pax_restricted(writer) == ARCHIVE_OK;
+    }
+
+    if (suffix == "tar.xz") {
+        return archive_write_add_filter_xz(writer) == ARCHIVE_OK
+            && archive_write_set_format_pax_restricted(writer) == ARCHIVE_OK;
+    }
+
+    if (suffix == "ar") {
+        return archive_write_set_format_ar_svr4(writer) == ARCHIVE_OK;
+    }
+
+    if (suffix == "7z") {
+        return archive_write_set_format_7zip(writer) == ARCHIVE_OK;
+    }
+
+    return false;
+}
+
+}
+
 ArchiveManager::ArchiveManager(QObject *parent) : QObject(parent), mError(NO_ERRORS) {
 
     connect(this,SIGNAL(currentDirChanged()),this,SIGNAL(currentNameChanged()));
-
-    archiveMimeTypes.insert("zip", { "application/zip", "application/x-zip", "application/x-zip-compressed" });
-    archiveMimeTypes.insert("tar", { "application/x-compressed-tar", "application/x-bzip-compressed-tar", "application/x-lzma-compressed-tar", "application/x-xz-compressed-tar", "application/x-gzip", "application/x-bzip", "application/x-lzma", "application/x-xz" });
-    archiveMimeTypes.insert("7z", { "application/x-7z-compressed" });
 
     // working directory for new archives
     QString output = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/newArchive";
@@ -128,21 +177,66 @@ void ArchiveManager::clear()
 QList<QUrl> ArchiveManager::extractFiles(const QUrl &archive, const QList<QUrl> &files)
 {
     QList<QUrl> outFiles;
-    KArchive *mArchivePtr = getKArchiveObject(archive.toLocalFile());
-    if (!mArchivePtr) {
+    QFileInfo info(archive.toLocalFile());
+    if (!info.isReadable()) {
+        setError(Errors::ERROR_READ);
         return outFiles;
     }
 
-    const KArchiveDirectory *rootDir = mArchivePtr->directory();
-    foreach(QUrl path, files)
-    {
-        const KArchiveFile *localFile = rootDir->file(path.toLocalFile());
-        if (localFile) {
-            bool localCopyTo = localFile->copyTo(mTempDir.toLocalFile());
-            outFiles <<  QUrl::fromLocalFile(mTempDir.toLocalFile() + "/" + localFile->name());
+    QSet<QString> requestedFiles;
+    foreach (const QUrl &path, files) {
+        const QString normalizedPath = normalizeArchivePath(path.toLocalFile());
+        if (!normalizedPath.isEmpty()) {
+            requestedFiles.insert(normalizedPath);
         }
     }
-    mArchivePtr->close();
+
+    ArchiveReadHandle handle;
+    QString errorMessage;
+    if (!openArchiveForReading(archive.toLocalFile(), handle, &errorMessage)) {
+        qWarning() << "Cannot open archive" << archive.toLocalFile() << errorMessage;
+        setError(Errors::UNSUPPORTED_FILE_FORMAT);
+        return outFiles;
+    }
+
+    struct archive_entry *entry = nullptr;
+    while (archive_read_next_header(handle.reader, &entry) == ARCHIVE_OK) {
+        const char *entryRawPath = archive_entry_pathname(entry);
+        if (!entryRawPath) {
+            archive_read_data_skip(handle.reader);
+            continue;
+        }
+        const QString entryPath = normalizeArchivePath(QString::fromUtf8(entryRawPath));
+        if (!requestedFiles.contains(entryPath) || archive_entry_filetype(entry) == AE_IFDIR) {
+            archive_read_data_skip(handle.reader);
+            continue;
+        }
+
+        const QString outPath = mTempDir.toLocalFile() + "/" + entryPath;
+        QDir().mkpath(QFileInfo(outPath).absolutePath());
+        QFile outputFile(outPath);
+        if (!outputFile.open(QIODevice::WriteOnly)) {
+            setError(Errors::ERROR_WRITE);
+            archive_read_data_skip(handle.reader);
+            continue;
+        }
+
+        const size_t chunkSize = 8192;
+        char buffer[chunkSize];
+        la_ssize_t bytesRead = 0;
+        while ((bytesRead = archive_read_data(handle.reader, buffer, chunkSize)) > 0) {
+            outputFile.write(buffer, bytesRead);
+        }
+        outputFile.close();
+        if (bytesRead < 0) {
+            setError(Errors::ERROR_READ);
+            continue;
+        }
+
+        outFiles << QUrl::fromLocalFile(outPath);
+    }
+
+    closeArchiveReader(handle);
 
     qDebug() << outFiles;
 
@@ -154,14 +248,63 @@ QList<QUrl> ArchiveManager::extractFiles(const QUrl &archive, const QList<QUrl> 
  */
 void ArchiveManager::extractTo(const QUrl &archive, const QUrl &path)
 {
-    KArchive *mArchivePtr = getKArchiveObject(archive.toLocalFile());
-    if (!mArchivePtr) {
+    QFileInfo info(archive.toLocalFile());
+    if (!info.isReadable()) {
+        setError(Errors::ERROR_READ);
         return;
     }
 
-    const KArchiveDirectory *rootDir = mArchivePtr->directory();
-    rootDir->copyTo(path.toLocalFile(), true);
-    mArchivePtr->close();
+    ArchiveReadHandle handle;
+    struct archive *writer = archive_write_disk_new();
+    QString errorMessage;
+    if (!openArchiveForReading(archive.toLocalFile(), handle, &errorMessage)) {
+        qWarning() << "Cannot open archive" << archive.toLocalFile() << errorMessage;
+        setError(Errors::UNSUPPORTED_FILE_FORMAT);
+        archive_write_free(writer);
+        return;
+    }
+
+    archive_write_disk_set_options(writer, ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM | ARCHIVE_EXTRACT_ACL | ARCHIVE_EXTRACT_FFLAGS);
+    archive_write_disk_set_standard_lookup(writer);
+
+    struct archive_entry *entry = nullptr;
+    while (archive_read_next_header(handle.reader, &entry) == ARCHIVE_OK) {
+        const char *entryRawPath = archive_entry_pathname(entry);
+        if (!entryRawPath) {
+            archive_read_data_skip(handle.reader);
+            continue;
+        }
+        const QString entryPath = normalizeArchivePath(QString::fromUtf8(entryRawPath));
+        if (entryPath.isEmpty()) {
+            archive_read_data_skip(handle.reader);
+            continue;
+        }
+
+        const QString fullPath = path.toLocalFile() + "/" + entryPath;
+        archive_entry_set_pathname(entry, fullPath.toUtf8().constData());
+
+        int result = archive_write_header(writer, entry);
+        if (result != ARCHIVE_OK) {
+            qWarning() << "Cannot extract entry" << entryPath << archive_error_string(writer);
+            archive_read_data_skip(handle.reader);
+            continue;
+        }
+
+        const size_t chunkSize = 8192;
+        char buffer[chunkSize];
+        la_ssize_t bytesRead = 0;
+        while ((bytesRead = archive_read_data(handle.reader, buffer, chunkSize)) > 0) {
+            if (archive_write_data(writer, buffer, bytesRead) < 0) {
+                setError(Errors::ERROR_WRITE);
+                break;
+            }
+        }
+        archive_write_finish_entry(writer);
+    }
+
+    archive_write_close(writer);
+    archive_write_free(writer);
+    closeArchiveReader(handle);
 
     setCurrentDir(mNewArchiveDir);
 }
@@ -173,16 +316,7 @@ bool ArchiveManager::isArchiveFile(const QUrl &path)
         return false;
     }
 
-    QString mime = mimeType(path.toLocalFile());
-    QList<QStringList> valuesList = archiveMimeTypes.values();
-    foreach(QStringList value, valuesList)
-    {
-        if(value.contains(mime))
-        {
-            return true;
-        }
-    }
-    return false;
+    return isSupportedArchiveFile(path.toLocalFile());
 }
 
 bool ArchiveManager::removeFile(const QUrl &file)
@@ -211,39 +345,131 @@ QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix)
 {
     QString output = mTempDir.path().append("/").append(archiveName).append(".").append(suffix);
     qDebug() << "save to:" << output;
-    KArchive* mArchivePtr;
-    if (suffix == "zip") {
-        mArchivePtr = new KZip(output);
-    } else if (suffix == "tar" || suffix == "tar.gz" || suffix == "tar.bz2" || suffix == "tar.xz") {
-        mArchivePtr = new KTar(output);
-    }else if (suffix == "7z"){
-        mArchivePtr = new K7Zip(output);
-    } else {
+    struct archive *writer = archive_write_new();
+    const bool isArFormat = (suffix == "ar");
+    QSet<QString> usedArEntryNames;
+
+    if (!configureArchiveWriter(writer, suffix)) {
         qWarning() << "ERROR. COMPRESSED FILE TYPE UNKOWN " << output;
         setError(Errors::UNSUPPORTED_FILE_FORMAT);
+        archive_write_free(writer);
         return QUrl("");
     }
 
-    if (!mArchivePtr->open(QIODevice::WriteOnly)) {
+    if (archive_write_open_filename(writer, output.toUtf8().constData()) != ARCHIVE_OK) {
         setError(Errors::ERROR_WRITE);
-        qWarning() << "could not open archive for writing";
+        qWarning() << "could not open archive for writing" << archive_error_string(writer);
+        archive_write_free(writer);
         return QUrl("");
     }
 
-    QDir dir(mNewArchiveDir.toLocalFile());
-    dir.setFilter( QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot );
-    foreach(const QFileInfo dirItem, dir.entryInfoList() ) {
-        if (dirItem.isDir()) {
-            mArchivePtr->addLocalDirectory(dirItem.absoluteFilePath(), dirItem.fileName());
-        } else {
-            mArchivePtr->addLocalFile(dirItem.absoluteFilePath(),dirItem.fileName());
+    QDirIterator it(mNewArchiveDir.toLocalFile(), QDir::NoDotAndDotDot | QDir::AllDirs | QDir::Files, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        const QString absolutePath = it.next();
+        const QFileInfo info(absolutePath);
+        const QString relativePath = QDir(mNewArchiveDir.toLocalFile()).relativeFilePath(absolutePath);
+
+        if (isArFormat && info.isDir()) {
+            // AR stores file members only; directory entries make the export fail.
+            continue;
         }
+
+        if (isArFormat && relativePath.contains('/')) {
+            qWarning() << "AR export does not support nested paths:" << relativePath;
+            setError(Errors::UNSUPPORTED_FILE_FORMAT);
+            archive_write_close(writer);
+            archive_write_free(writer);
+            return QUrl("");
+        }
+
+        if (isArFormat && usedArEntryNames.contains(relativePath)) {
+            qWarning() << "AR export duplicate member name:" << relativePath;
+            setError(Errors::ERROR_WRITE);
+            archive_write_close(writer);
+            archive_write_free(writer);
+            return QUrl("");
+        }
+
+        struct archive_entry *entry = archive_entry_new();
+        archive_entry_set_pathname(entry, relativePath.toUtf8().constData());
+
+        if (info.isDir()) {
+            archive_entry_set_filetype(entry, AE_IFDIR);
+            archive_entry_set_perm(entry, 0755);
+            archive_entry_set_size(entry, 0);
+            if (archive_write_header(writer, entry) != ARCHIVE_OK) {
+                qWarning() << "Cannot write archive header for" << relativePath << archive_error_string(writer);
+                archive_entry_free(entry);
+                setError(Errors::ERROR_WRITE);
+                archive_write_close(writer);
+                archive_write_free(writer);
+                return QUrl("");
+            }
+            archive_entry_free(entry);
+            continue;
+        }
+
+        if (isArFormat) {
+            usedArEntryNames.insert(relativePath);
+        }
+
+        QFile inputFile(absolutePath);
+        if (!inputFile.open(QIODevice::ReadOnly)) {
+            archive_entry_free(entry);
+            setError(Errors::ERROR_READ);
+            archive_write_close(writer);
+            archive_write_free(writer);
+            return QUrl("");
+        }
+
+        archive_entry_set_filetype(entry, AE_IFREG);
+        archive_entry_set_perm(entry, 0644);
+        archive_entry_set_size(entry, info.size());
+
+        if (archive_write_header(writer, entry) != ARCHIVE_OK) {
+            qWarning() << "Cannot write archive header for" << relativePath << archive_error_string(writer);
+            inputFile.close();
+            archive_entry_free(entry);
+            setError(Errors::ERROR_WRITE);
+            archive_write_close(writer);
+            archive_write_free(writer);
+            return QUrl("");
+        }
+
+        while (!inputFile.atEnd()) {
+            const QByteArray data = inputFile.read(8192);
+            if (archive_write_data(writer, data.constData(), static_cast<size_t>(data.size())) < 0) {
+                inputFile.close();
+                archive_entry_free(entry);
+                setError(Errors::ERROR_WRITE);
+                archive_write_close(writer);
+                archive_write_free(writer);
+                return QUrl("");
+            }
+        }
+        inputFile.close();
+        archive_entry_free(entry);
     }
 
-    mArchivePtr->close();
+    archive_write_close(writer);
+    archive_write_free(writer);
     qDebug() << "archive copied to:" << output;
 
     return QUrl::fromLocalFile(output);
+}
+
+bool ArchiveManager::isWriteFormatSupported(const QString &suffix) const
+{
+    static const QStringList supportedFormats = {
+        "zip",
+        "tar",
+        "tar.gz",
+        "tar.bz2",
+        "tar.xz",
+        "7z"
+    };
+
+    return supportedFormats.contains(suffix);
 }
 
 bool ArchiveManager::copy(const QUrl &sourcePath, const QUrl &destination)
@@ -272,48 +498,7 @@ QString ArchiveManager::iconName(const QString &fileName) const
     return icon;
 }
 
-QString ArchiveManager::mimeType( const QString &filePath ) const{
-    QMimeType mimeType = QMimeDatabase().mimeTypeForFile(filePath);
-    return mimeType.name();
-}
 
-KArchive *ArchiveManager::getKArchiveObject(const QString &filePath)
-{
-    KArchive *kArch = nullptr;
-
-    QFileInfo info(filePath);
-    if (!info.isReadable()) {
-        qWarning() << "Cannot read " << filePath;
-        setError(Errors::ERROR_READ);
-        return nullptr;
-    }
-
-    QString mime = mimeType(filePath);
-
-    if (archiveMimeTypes["zip"].contains(mime)) {
-        kArch = new KZip(filePath);
-    } else if (archiveMimeTypes["tar"].contains(mime)) {
-        kArch = new KTar(filePath);
-    }else if (archiveMimeTypes["7z"].contains(mime)){
-        kArch = new K7Zip(filePath);
-    } else {
-        qWarning() << "ERROR. COMPRESSED FILE TYPE UNKOWN " << filePath;
-    }
-
-    if (!kArch) {
-        qWarning() << "Cannot open " << filePath;
-        setError(Errors::UNSUPPORTED_FILE_FORMAT);
-        return nullptr;
-    }
-    // Open the archive
-    if (!kArch->open(QIODevice::ReadOnly)) {
-        qWarning() << "Cannot open " << filePath;
-        setError(Errors::ERROR_READ);
-        return nullptr;
-    }
-
-    return kArch;
-}
 
 void ArchiveManager::cleanDirectory(const QString &path)
 {

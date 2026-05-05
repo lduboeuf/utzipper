@@ -8,9 +8,6 @@ find_package(Qt5Core REQUIRED)
 find_package(Qt5Qml REQUIRED)
 find_package(Qt5Quick REQUIRED)
 find_package(Qt5QuickControls2 REQUIRED)
-find_package(ECM NO_MODULE)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_FIND_MODULE_DIR})
-find_package(KF5 REQUIRED COMPONENTS Archive)
 
 execute_process(
     COMMAND dpkg-architecture -qDEB_HOST_MULTIARCH
@@ -63,7 +60,7 @@ install(FILES assets/logo.svg DESTINATION assets)
 #add_executable(${PROJECT_NAME} ${SRC} ${QT_RESOURCES})
 #set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELEASE -s)
 #target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${QUAZIP_INCLUDE_DIR})
-#target_link_libraries(${PROJECT_NAME} Qt5::Gui Qt5::Qml Qt5::Quick Qt5::QuickControls2 KF5::Archive
+#target_link_libraries(${PROJECT_NAME} Qt5::Gui Qt5::Qml Qt5::Quick Qt5::QuickControls2 ${LIBARCHIVE_LIBRARIES}
 #    )
 #install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
 

@@ -2,11 +2,18 @@
 
 Archive reader/writer for Ubuntu Touch. 
 
+Read support includes `zip`, `tar`, `tar.gz`, `tar.bz2`, `tar.xz`, `7z`, `rar`, `ar`, Debian packages (`.deb`) and Click packages (`.click`).
+
+Write/export support includes `zip`, `tar`, `tar.gz`, `tar.bz2`, `tar.xz`, `7z` and `ar`.
+`rar` is currently read-only.
+
+For `.deb` and `.click`, the browser opens the package payload from `data.tar.*` so installed files can be explored and extracted directly.
+
 [![OpenStore](https://open-store.io/badges/en_US.png)](https://open-store.io/app/utzip.lduboeuf)
 
 # Developper
 
-Relies on https://github.com/KDE/karchive 
+Relies on https://www.libarchive.org/
 
 ## Build
 
@@ -16,7 +23,7 @@ Relies on https://github.com/KDE/karchive
 # License
 
 Copyright (C) 2021 Lionel Duboeuf
-KArchive : https://github.com/KDE/karchive
+libarchive: https://www.libarchive.org/
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License version 3, as published
 by the Free Software Foundation.

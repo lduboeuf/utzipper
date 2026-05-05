@@ -12,7 +12,7 @@ Page {
     anchors.fill: parent
     objectName: "ArchiveWriter"
 
-    property string archive: null
+    property string archive: ""
     property var navigation: []
 
     function save(archiveName, suffix) {
@@ -21,9 +21,11 @@ Page {
         const archivePath = ArchiveManager.save(name, suffix)
         if (archivePath !== "") {
             pageStack.push(exportPicker, { files: [archivePath]})
+            return true
         } else {
             console.warn('error while exporting')
             //TODO errorMsg
+            return false
         }
     }
 
@@ -279,7 +281,15 @@ Page {
                     id: formatList
                     Layout.fillWidth: true
                     text: i18n.tr("format")
-                    model: ["zip", "tar", "tar.gz", "tar.bz2", "tar.xz","7z"]
+                    model: ["zip", "tar", "tar.gz", "tar.bz2", "tar.xz", "7z", "ar", "rar"]
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    color: theme.palette.normal.negative
+                    visible: !ArchiveManager.isWriteFormatSupported(formatList.model[formatList.selectedIndex])
+                    text: i18n.tr("This format is read-only for now. Please choose zip, tar, tar.gz, tar.bz2, tar.xz or ar.")
                 }
 
                 RowLayout {
@@ -295,10 +305,12 @@ Page {
                         text: i18n.tr("save")
                         Layout.fillWidth: true
                         color: theme.palette.normal.positive
-                        enabled: nametxt.inputMethodComposing || nametxt.displayText.length > 0
+                        enabled: (nametxt.inputMethodComposing || nametxt.displayText.length > 0)
+                                 && ArchiveManager.isWriteFormatSupported(formatList.model[formatList.selectedIndex])
                         onClicked: {
-                            root.save(nametxt.displayText, formatList.model[formatList.selectedIndex]);
-                            PopupUtils.close(dialogue)
+                            if (root.save(nametxt.displayText, formatList.model[formatList.selectedIndex])) {
+                                PopupUtils.close(dialogue)
+                            }
                         }
                     }
                 }
@@ -357,7 +369,7 @@ Page {
     }
 
     Component.onCompleted: {
-        if (root.archive) {
+        if (root.archive !== "") {
             ArchiveManager.extractTo(root.archive, ArchiveManager.newArchiveDir)
         }
     }

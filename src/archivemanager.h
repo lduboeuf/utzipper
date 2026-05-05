@@ -20,9 +20,9 @@
 #include <QQmlListProperty>
 #include <QAbstractListModel>
 #include <QObject>
-#include <KArchive>
 
 #include "archiveitem.h"
+#include "archiveutils.h"
 
 class ArchiveManager: public QObject {
     Q_OBJECT
@@ -64,6 +64,7 @@ public:
     Q_INVOKABLE bool appendFolder(const QString &name, const QUrl &dir);
     Q_INVOKABLE bool removeFolder(const QUrl &folder);
     Q_INVOKABLE QUrl save(const QString &archiveName, const QString &suffix);
+    Q_INVOKABLE bool isWriteFormatSupported(const QString &suffix) const;
     Q_INVOKABLE bool copy(const QUrl &sourcePath, const QUrl &destination);
     Q_INVOKABLE bool move(const QUrl &sourcePath, const QUrl &destination);
     Q_INVOKABLE QString iconName(const QString &fileName) const;
@@ -85,9 +86,6 @@ private:
     QUrl mTempDir;
 
     Errors mError;
-    QMap<QString, QStringList> archiveMimeTypes;
-    QString mimeType( const QString &filePath ) const;
-    KArchive* getKArchiveObject(const QString &filePath);
 
     void cleanDirectory(const QString &path);
 };
