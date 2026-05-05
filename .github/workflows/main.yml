@@ -1,0 +1,45 @@
+name: Build Click (amd64/arm64/armhf)
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    container:
+      image: clickable/ci-ut24.04-1.x-${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            triplet: x86_64-linux-gnu
+          - arch: arm64
+            triplet: aarch64-linux-gnu
+          - arch: armhf
+            triplet: arm-linux-gnueabihf
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build (${{ matrix.arch }})
+        run: clickable build --arch ${{ matrix.arch }}
+
+      - name: Review (${{ matrix.arch }})
+        run: clickable review --arch ${{ matrix.arch }}
+
+      - name: Upload click artifact (${{ matrix.arch }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: utzip-${{ matrix.arch }}
+          path: build/${{ matrix.triplet }}/app/*.click
+          if-no-files-found: error
+
+
