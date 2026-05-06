@@ -37,7 +37,7 @@ Page {
 
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: "zip, gzip, bzip, xz, tar, 7z"
+            text: "zip, gzip, bzip, xz, tar, 7z, rar, ar"
         }
 
         Label {

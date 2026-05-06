@@ -32,7 +32,49 @@
   #define SKIP_EMPTY QString::SkipEmptyParts
 #endif
 
-ArchiveReader::ArchiveReader(QObject *parent) : QAbstractListModel(parent), mError(NO_ERRORS), mHasFiles(false) {
+namespace {
+
+ArchiveReader::Errors toReaderError(ArchiveOpenError error)
+{
+    switch (error) {
+    case ArchiveOpenError::PasswordRequired:
+        return ArchiveReader::ERROR_PASSPHRASE_REQUIRED;
+    case ArchiveOpenError::InvalidPassword:
+        return ArchiveReader::ERROR_INVALID_PASSPHRASE;
+    case ArchiveOpenError::EncryptionUnsupported:
+        return ArchiveReader::ERROR_ENCRYPTION_UNSUPPORTED;
+    case ArchiveOpenError::ReadError:
+        return ArchiveReader::ERROR_READ;
+    case ArchiveOpenError::UnsupportedFormat:
+        return ArchiveReader::UNSUPPORTED_FILE_FORMAT;
+    case ArchiveOpenError::NoError:
+    default:
+        return ArchiveReader::NO_ERRORS;
+    }
+}
+
+QString fallbackReaderMessage(ArchiveOpenError error)
+{
+    switch (error) {
+    case ArchiveOpenError::PasswordRequired:
+        return QStringLiteral("This ZIP archive requires a passphrase.");
+    case ArchiveOpenError::InvalidPassword:
+        return QStringLiteral("Incorrect passphrase.");
+    case ArchiveOpenError::EncryptionUnsupported:
+        return QStringLiteral("This encrypted archive cannot be opened with the current libarchive build.");
+    case ArchiveOpenError::UnsupportedFormat:
+        return QStringLiteral("Unsupported archive format.");
+    case ArchiveOpenError::ReadError:
+        return QStringLiteral("Could not read the archive.");
+    case ArchiveOpenError::NoError:
+    default:
+        return QString();
+    }
+}
+
+}
+
+ArchiveReader::ArchiveReader(QObject *parent) : QAbstractListModel(parent), mHasFiles(false), mRequiresPassphrase(false), mEncrypted(false), mError(NO_ERRORS) {
     connect(this, SIGNAL(archiveChanged()),this, SLOT(extract()));
     connect(this, SIGNAL(rowCountChanged()),this, SLOT(onRowCountChanged()));
 }
@@ -53,6 +95,10 @@ void ArchiveReader::setArchive(const QUrl &path)
     }
     qDebug() << "new archive:" << path;
     mArchive = path;
+    if (!mPassphrase.isEmpty()) {
+        mPassphrase.clear();
+        Q_EMIT passphraseChanged();
+    }
     Q_EMIT archiveChanged();
 }
 
@@ -61,9 +107,34 @@ QString ArchiveReader::name() const
     return mName;
 }
 
+QString ArchiveReader::passphrase() const
+{
+    return mPassphrase;
+}
+
+void ArchiveReader::setPassphrase(const QString &passphrase)
+{
+    if (mPassphrase == passphrase) {
+        return;
+    }
+
+    mPassphrase = passphrase;
+    Q_EMIT passphraseChanged();
+}
+
 bool ArchiveReader::hasFiles() const
 {
     return mHasFiles;
+}
+
+bool ArchiveReader::requiresPassphrase() const
+{
+    return mRequiresPassphrase;
+}
+
+bool ArchiveReader::encrypted() const
+{
+    return mEncrypted;
 }
 
 QString ArchiveReader::currentDir() const
@@ -93,11 +164,23 @@ ArchiveReader::Errors ArchiveReader::error() const
     return mError;
 }
 
+QString ArchiveReader::errorMessage() const
+{
+    return mErrorMessage;
+}
+
 void ArchiveReader::clear()
 {
     mArchive = "";
     mName = "";
+    if (!mPassphrase.isEmpty()) {
+        mPassphrase.clear();
+        Q_EMIT passphraseChanged();
+    }
     setError(Errors::NO_ERRORS);
+    setErrorMessage(QString());
+    setRequiresPassphrase(false);
+    setEncrypted(false);
     beginResetModel();
     mCurrentArchiveItems.clear();
     mArchiveItems.clear();
@@ -109,6 +192,11 @@ void ArchiveReader::clear()
 bool ArchiveReader::hasData() const
 {
     return mArchiveItems.count() > 0;
+}
+
+void ArchiveReader::retry()
+{
+    extract();
 }
 
 void ArchiveReader::cleanDirectory(const QString &path)
@@ -131,11 +219,15 @@ void ArchiveReader::extract()
 {
 
     setError(Errors::NO_ERRORS);
+    setErrorMessage(QString());
+    setRequiresPassphrase(false);
+    setEncrypted(false);
 
     QFileInfo info(mArchive.toLocalFile());
     if (!info.isReadable()) {
         qWarning() << "ArchiveReader: Cannot read " << mArchive.toLocalFile();
         setError(Errors::ERROR_READ);
+        setErrorMessage(QStringLiteral("Cannot read the selected archive."));
         return;
     }
 
@@ -149,23 +241,97 @@ void ArchiveReader::extract()
 
     ArchiveReadHandle handle;
     QString errorMessage;
-    if (!openArchiveForReading(mArchive.toLocalFile(), handle, &errorMessage)) {
+    ArchiveOpenError openError = ArchiveOpenError::NoError;
+    if (!openArchiveForReading(mArchive.toLocalFile(), handle, mPassphrase, &openError, &errorMessage)) {
         qWarning() << "Cannot open archive" << mArchive.toLocalFile() << errorMessage;
-        setError(Errors::UNSUPPORTED_FILE_FORMAT);
+        setEncrypted(openError == ArchiveOpenError::PasswordRequired
+                     || openError == ArchiveOpenError::InvalidPassword
+                     || openError == ArchiveOpenError::EncryptionUnsupported);
+        setRequiresPassphrase(openError == ArchiveOpenError::PasswordRequired || openError == ArchiveOpenError::InvalidPassword);
+        setError(toReaderError(openError));
+        setErrorMessage(errorMessage.isEmpty() ? fallbackReaderMessage(openError) : errorMessage);
         return;
     }
 
+    setEncrypted(handle.encrypted);
+
     struct archive_entry *entry = nullptr;
-    while (archive_read_next_header(handle.reader, &entry) == ARCHIVE_OK) {
+    ArchiveOpenError readError = ArchiveOpenError::NoError;
+    QString readErrorMessage;
+    bool success = true;
+    while (true) {
+        const int headerResult = archive_read_next_header(handle.reader, &entry);
+        if (headerResult == ARCHIVE_EOF) {
+            break;
+        }
+        if (headerResult != ARCHIVE_OK) {
+            readErrorMessage = archiveErrorString(handle.reader);
+            readError = archiveReadError(handle.reader, mPassphrase, readErrorMessage);
+            success = false;
+            break;
+        }
+
+        if (archive_entry_is_encrypted(entry) == 1) {
+            setEncrypted(true);
+            if (mPassphrase.isEmpty()) {
+                readError = ArchiveOpenError::PasswordRequired;
+                readErrorMessage = fallbackReaderMessage(readError);
+                success = false;
+                break;
+            }
+        }
+
         const char *entryPath = archive_entry_pathname(entry);
         if (entryPath) {
             const bool isDir = archive_entry_filetype(entry) == AE_IFDIR;
             addArchiveEntry(QString::fromUtf8(entryPath), isDir);
         }
-        archive_read_data_skip(handle.reader);
+
+        // For encrypted entries, we must actually read the data (not just skip it)
+        // because libarchive only validates the passphrase during real data decryption.
+        if (archive_entry_is_encrypted(entry) == 1 && !mPassphrase.isEmpty()) {
+            char buf[8192];
+            la_ssize_t bytesRead = 0;
+            bool readOk = true;
+            while ((bytesRead = archive_read_data(handle.reader, buf, sizeof(buf))) > 0) {
+                // discard data, we just need to trigger passphrase validation
+            }
+            if (bytesRead < 0) {
+                readErrorMessage = archiveErrorString(handle.reader);
+                readError = ArchiveOpenError::InvalidPassword;
+                readOk = false;
+            }
+            if (!readOk) {
+                success = false;
+                break;
+            }
+        } else {
+            if (archive_read_data_skip(handle.reader) != ARCHIVE_OK) {
+                readErrorMessage = archiveErrorString(handle.reader);
+                readError = archiveReadError(handle.reader, mPassphrase, readErrorMessage);
+                success = false;
+                break;
+            }
+        }
     }
 
     closeArchiveReader(handle);
+
+    if (!success) {
+        beginResetModel();
+        mCurrentArchiveItems.clear();
+        mArchiveItems.clear();
+        endResetModel();
+        setRequiresPassphrase(readError == ArchiveOpenError::PasswordRequired || readError == ArchiveOpenError::InvalidPassword);
+        setEncrypted(mEncrypted || readError == ArchiveOpenError::PasswordRequired
+                     || readError == ArchiveOpenError::InvalidPassword
+                     || readError == ArchiveOpenError::EncryptionUnsupported);
+        setError(toReaderError(readError));
+        setErrorMessage(readErrorMessage.isEmpty() ? fallbackReaderMessage(readError) : readErrorMessage);
+        Q_EMIT rowCountChanged();
+        return;
+    }
+
     sortArchiveItems();
 
     Q_EMIT modelChanged();
@@ -194,6 +360,36 @@ void ArchiveReader::setError(const ArchiveReader::Errors &error)
 {
     mError = error;
     Q_EMIT errorChanged();
+}
+
+void ArchiveReader::setErrorMessage(const QString &message)
+{
+    if (mErrorMessage == message) {
+        return;
+    }
+
+    mErrorMessage = message;
+    Q_EMIT errorMessageChanged();
+}
+
+void ArchiveReader::setRequiresPassphrase(bool required)
+{
+    if (mRequiresPassphrase == required) {
+        return;
+    }
+
+    mRequiresPassphrase = required;
+    Q_EMIT requiresPassphraseChanged();
+}
+
+void ArchiveReader::setEncrypted(bool encrypted)
+{
+    if (mEncrypted == encrypted) {
+        return;
+    }
+
+    mEncrypted = encrypted;
+    Q_EMIT encryptedChanged();
 }
 
 void ArchiveReader::addArchiveEntry(const QString &entryPath, bool isDir)

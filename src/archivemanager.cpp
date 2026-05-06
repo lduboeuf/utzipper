@@ -32,6 +32,44 @@
 
 namespace {
 
+ArchiveManager::Errors toManagerError(ArchiveOpenError error)
+{
+    switch (error) {
+    case ArchiveOpenError::PasswordRequired:
+        return ArchiveManager::ERROR_PASSPHRASE_REQUIRED;
+    case ArchiveOpenError::InvalidPassword:
+        return ArchiveManager::ERROR_INVALID_PASSPHRASE;
+    case ArchiveOpenError::EncryptionUnsupported:
+        return ArchiveManager::ERROR_ENCRYPTION_UNSUPPORTED;
+    case ArchiveOpenError::ReadError:
+        return ArchiveManager::ERROR_READ;
+    case ArchiveOpenError::UnsupportedFormat:
+        return ArchiveManager::UNSUPPORTED_FILE_FORMAT;
+    case ArchiveOpenError::NoError:
+    default:
+        return ArchiveManager::NO_ERRORS;
+    }
+}
+
+QString fallbackManagerMessage(ArchiveOpenError error)
+{
+    switch (error) {
+    case ArchiveOpenError::PasswordRequired:
+        return QStringLiteral("This ZIP archive requires a passphrase.");
+    case ArchiveOpenError::InvalidPassword:
+        return QStringLiteral("Incorrect passphrase.");
+    case ArchiveOpenError::EncryptionUnsupported:
+        return QStringLiteral("Encrypted ZIP archives are not supported by the current libarchive build.");
+    case ArchiveOpenError::UnsupportedFormat:
+        return QStringLiteral("Unsupported archive format.");
+    case ArchiveOpenError::ReadError:
+        return QStringLiteral("Could not read the archive.");
+    case ArchiveOpenError::NoError:
+    default:
+        return QString();
+    }
+}
+
 QString normalizeArchivePath(const QString &rawPath)
 {
     QString normalized = QDir::cleanPath(rawPath);
@@ -44,10 +82,36 @@ QString normalizeArchivePath(const QString &rawPath)
     return normalized;
 }
 
-bool configureArchiveWriter(struct archive *writer, const QString &suffix)
+bool configureArchiveWriter(struct archive *writer, const QString &suffix, const QString &passphrase, QString *errorMessage)
 {
     if (suffix == "zip") {
-        return archive_write_set_format_zip(writer) == ARCHIVE_OK;
+        if (archive_write_set_format_zip(writer) != ARCHIVE_OK) {
+            if (errorMessage) {
+                *errorMessage = archiveErrorString(writer);
+            }
+            return false;
+        }
+
+        if (passphrase.isEmpty()) {
+            return true;
+        }
+
+        if (archive_write_set_format_option(writer, "zip", "encryption", "aes256") != ARCHIVE_OK
+            && archive_write_set_format_option(writer, "zip", "encryption", "traditional") != ARCHIVE_OK) {
+            if (errorMessage) {
+                *errorMessage = archiveErrorString(writer);
+            }
+            return false;
+        }
+
+        if (archive_write_set_passphrase(writer, passphrase.toUtf8().constData()) != ARCHIVE_OK) {
+            if (errorMessage) {
+                *errorMessage = archiveErrorString(writer);
+            }
+            return false;
+        }
+
+        return true;
     }
 
     if (suffix == "tar") {
@@ -155,15 +219,31 @@ ArchiveManager::Errors ArchiveManager::error() const
     return mError;
 }
 
+QString ArchiveManager::errorMessage() const
+{
+    return mErrorMessage;
+}
+
 void ArchiveManager::setError(const ArchiveManager::Errors &error)
 {
     mError = error;
     Q_EMIT errorChanged();
 }
 
+void ArchiveManager::setErrorMessage(const QString &message)
+{
+    if (mErrorMessage == message) {
+        return;
+    }
+
+    mErrorMessage = message;
+    Q_EMIT errorMessageChanged();
+}
+
 void ArchiveManager::clear()
 {
     setError(Errors::NO_ERRORS);
+    setErrorMessage(QString());
 
     //clean new archive dir
     cleanDirectory(mNewArchiveDir.toLocalFile());
@@ -174,12 +254,15 @@ void ArchiveManager::clear()
 }
 
 
-QList<QUrl> ArchiveManager::extractFiles(const QUrl &archive, const QList<QUrl> &files)
+QList<QUrl> ArchiveManager::extractFiles(const QUrl &archive, const QList<QUrl> &files, const QString &passphrase)
 {
     QList<QUrl> outFiles;
+    setError(Errors::NO_ERRORS);
+    setErrorMessage(QString());
     QFileInfo info(archive.toLocalFile());
     if (!info.isReadable()) {
         setError(Errors::ERROR_READ);
+        setErrorMessage(QStringLiteral("Cannot read the selected archive."));
         return outFiles;
     }
 
@@ -193,14 +276,37 @@ QList<QUrl> ArchiveManager::extractFiles(const QUrl &archive, const QList<QUrl> 
 
     ArchiveReadHandle handle;
     QString errorMessage;
-    if (!openArchiveForReading(archive.toLocalFile(), handle, &errorMessage)) {
+    ArchiveOpenError openError = ArchiveOpenError::NoError;
+    if (!openArchiveForReading(archive.toLocalFile(), handle, passphrase, &openError, &errorMessage)) {
         qWarning() << "Cannot open archive" << archive.toLocalFile() << errorMessage;
-        setError(Errors::UNSUPPORTED_FILE_FORMAT);
+        setError(toManagerError(openError));
+        setErrorMessage(errorMessage.isEmpty() ? fallbackManagerMessage(openError) : errorMessage);
         return outFiles;
     }
 
     struct archive_entry *entry = nullptr;
-    while (archive_read_next_header(handle.reader, &entry) == ARCHIVE_OK) {
+    bool success = true;
+    while (true) {
+        const int headerResult = archive_read_next_header(handle.reader, &entry);
+        if (headerResult == ARCHIVE_EOF) {
+            break;
+        }
+        if (headerResult != ARCHIVE_OK) {
+            const QString readErrorMessage = archiveErrorString(handle.reader);
+            const ArchiveOpenError readError = archiveReadError(handle.reader, passphrase, readErrorMessage);
+            setError(toManagerError(readError));
+            setErrorMessage(readErrorMessage.isEmpty() ? fallbackManagerMessage(readError) : readErrorMessage);
+            success = false;
+            break;
+        }
+
+        if (archive_entry_is_encrypted(entry) == 1 && passphrase.isEmpty()) {
+            setError(Errors::ERROR_PASSPHRASE_REQUIRED);
+            setErrorMessage(fallbackManagerMessage(ArchiveOpenError::PasswordRequired));
+            success = false;
+            break;
+        }
+
         const char *entryRawPath = archive_entry_pathname(entry);
         if (!entryRawPath) {
             archive_read_data_skip(handle.reader);
@@ -217,6 +323,7 @@ QList<QUrl> ArchiveManager::extractFiles(const QUrl &archive, const QList<QUrl> 
         QFile outputFile(outPath);
         if (!outputFile.open(QIODevice::WriteOnly)) {
             setError(Errors::ERROR_WRITE);
+            setErrorMessage(QStringLiteral("Could not write an extracted file."));
             archive_read_data_skip(handle.reader);
             continue;
         }
@@ -229,14 +336,26 @@ QList<QUrl> ArchiveManager::extractFiles(const QUrl &archive, const QList<QUrl> 
         }
         outputFile.close();
         if (bytesRead < 0) {
-            setError(Errors::ERROR_READ);
-            continue;
+            const QString readErrorMessage = archiveErrorString(handle.reader);
+            ArchiveOpenError readError = archiveReadError(handle.reader, passphrase, readErrorMessage);
+            if (readError == ArchiveOpenError::ReadError && archive_entry_is_encrypted(entry) == 1 && !passphrase.isEmpty()) {
+                readError = ArchiveOpenError::InvalidPassword;
+            }
+            setError(toManagerError(readError));
+            setErrorMessage(readErrorMessage.isEmpty() ? fallbackManagerMessage(readError) : readErrorMessage);
+            outputFile.remove();
+            success = false;
+            break;
         }
 
         outFiles << QUrl::fromLocalFile(outPath);
     }
 
     closeArchiveReader(handle);
+
+    if (!success) {
+        return outFiles;
+    }
 
     qDebug() << outFiles;
 
@@ -246,20 +365,25 @@ QList<QUrl> ArchiveManager::extractFiles(const QUrl &archive, const QList<QUrl> 
 /**
  * Extract the archive in the path folder
  */
-void ArchiveManager::extractTo(const QUrl &archive, const QUrl &path)
+void ArchiveManager::extractTo(const QUrl &archive, const QUrl &path, const QString &passphrase)
 {
+    setError(Errors::NO_ERRORS);
+    setErrorMessage(QString());
     QFileInfo info(archive.toLocalFile());
     if (!info.isReadable()) {
         setError(Errors::ERROR_READ);
+        setErrorMessage(QStringLiteral("Cannot read the selected archive."));
         return;
     }
 
     ArchiveReadHandle handle;
     struct archive *writer = archive_write_disk_new();
     QString errorMessage;
-    if (!openArchiveForReading(archive.toLocalFile(), handle, &errorMessage)) {
+    ArchiveOpenError openError = ArchiveOpenError::NoError;
+    if (!openArchiveForReading(archive.toLocalFile(), handle, passphrase, &openError, &errorMessage)) {
         qWarning() << "Cannot open archive" << archive.toLocalFile() << errorMessage;
-        setError(Errors::UNSUPPORTED_FILE_FORMAT);
+        setError(toManagerError(openError));
+        setErrorMessage(errorMessage.isEmpty() ? fallbackManagerMessage(openError) : errorMessage);
         archive_write_free(writer);
         return;
     }
@@ -268,7 +392,28 @@ void ArchiveManager::extractTo(const QUrl &archive, const QUrl &path)
     archive_write_disk_set_standard_lookup(writer);
 
     struct archive_entry *entry = nullptr;
-    while (archive_read_next_header(handle.reader, &entry) == ARCHIVE_OK) {
+    bool success = true;
+    while (true) {
+        const int headerResult = archive_read_next_header(handle.reader, &entry);
+        if (headerResult == ARCHIVE_EOF) {
+            break;
+        }
+        if (headerResult != ARCHIVE_OK) {
+            const QString readErrorMessage = archiveErrorString(handle.reader);
+            const ArchiveOpenError readError = archiveReadError(handle.reader, passphrase, readErrorMessage);
+            setError(toManagerError(readError));
+            setErrorMessage(readErrorMessage.isEmpty() ? fallbackManagerMessage(readError) : readErrorMessage);
+            success = false;
+            break;
+        }
+
+        if (archive_entry_is_encrypted(entry) == 1 && passphrase.isEmpty()) {
+            setError(Errors::ERROR_PASSPHRASE_REQUIRED);
+            setErrorMessage(fallbackManagerMessage(ArchiveOpenError::PasswordRequired));
+            success = false;
+            break;
+        }
+
         const char *entryRawPath = archive_entry_pathname(entry);
         if (!entryRawPath) {
             archive_read_data_skip(handle.reader);
@@ -296,15 +441,35 @@ void ArchiveManager::extractTo(const QUrl &archive, const QUrl &path)
         while ((bytesRead = archive_read_data(handle.reader, buffer, chunkSize)) > 0) {
             if (archive_write_data(writer, buffer, bytesRead) < 0) {
                 setError(Errors::ERROR_WRITE);
+                setErrorMessage(QStringLiteral("Could not write an extracted file."));
                 break;
             }
         }
+        if (bytesRead < 0) {
+            const QString readErrorMessage = archiveErrorString(handle.reader);
+            ArchiveOpenError readError = archiveReadError(handle.reader, passphrase, readErrorMessage);
+            if (readError == ArchiveOpenError::ReadError && archive_entry_is_encrypted(entry) == 1 && !passphrase.isEmpty()) {
+                readError = ArchiveOpenError::InvalidPassword;
+            }
+            setError(toManagerError(readError));
+            setErrorMessage(readErrorMessage.isEmpty() ? fallbackManagerMessage(readError) : readErrorMessage);
+            success = false;
+        }
         archive_write_finish_entry(writer);
+
+        if (mError != Errors::NO_ERRORS) {
+            success = false;
+            break;
+        }
     }
 
     archive_write_close(writer);
     archive_write_free(writer);
     closeArchiveReader(handle);
+
+    if (!success) {
+        return;
+    }
 
     setCurrentDir(mNewArchiveDir);
 }
@@ -341,23 +506,39 @@ bool ArchiveManager::removeFolder(const QUrl &folder)
     return f.removeRecursively();
 }
 
-QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix)
+QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix, const QString &passphrase)
 {
+    setError(Errors::NO_ERRORS);
+    setErrorMessage(QString());
+
+    if (!passphrase.isEmpty() && !isEncryptionSupported(suffix)) {
+        setError(Errors::ERROR_ENCRYPTION_UNSUPPORTED);
+        setErrorMessage(QStringLiteral("Passphrase protection is only available for ZIP exports."));
+        return QUrl("");
+    }
+
     QString output = mTempDir.path().append("/").append(archiveName).append(".").append(suffix);
     qDebug() << "save to:" << output;
     struct archive *writer = archive_write_new();
     const bool isArFormat = (suffix == "ar");
     QSet<QString> usedArEntryNames;
+    QString writerErrorMessage;
 
-    if (!configureArchiveWriter(writer, suffix)) {
+    if (!configureArchiveWriter(writer, suffix, passphrase, &writerErrorMessage)) {
         qWarning() << "ERROR. COMPRESSED FILE TYPE UNKOWN " << output;
-        setError(Errors::UNSUPPORTED_FILE_FORMAT);
+        setError(passphrase.isEmpty() ? Errors::UNSUPPORTED_FILE_FORMAT : Errors::ERROR_ENCRYPTION_UNSUPPORTED);
+        setErrorMessage(writerErrorMessage.isEmpty()
+                            ? (passphrase.isEmpty()
+                                   ? QStringLiteral("Unsupported archive format.")
+                                   : QStringLiteral("Encrypted ZIP export is not supported by the current libarchive build."))
+                            : writerErrorMessage);
         archive_write_free(writer);
         return QUrl("");
     }
 
     if (archive_write_open_filename(writer, output.toUtf8().constData()) != ARCHIVE_OK) {
         setError(Errors::ERROR_WRITE);
+        setErrorMessage(archiveErrorString(writer));
         qWarning() << "could not open archive for writing" << archive_error_string(writer);
         archive_write_free(writer);
         return QUrl("");
@@ -377,6 +558,7 @@ QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix)
         if (isArFormat && relativePath.contains('/')) {
             qWarning() << "AR export does not support nested paths:" << relativePath;
             setError(Errors::UNSUPPORTED_FILE_FORMAT);
+            setErrorMessage(QStringLiteral("AR export does not support nested paths."));
             archive_write_close(writer);
             archive_write_free(writer);
             return QUrl("");
@@ -385,6 +567,7 @@ QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix)
         if (isArFormat && usedArEntryNames.contains(relativePath)) {
             qWarning() << "AR export duplicate member name:" << relativePath;
             setError(Errors::ERROR_WRITE);
+            setErrorMessage(QStringLiteral("AR export does not support duplicate member names."));
             archive_write_close(writer);
             archive_write_free(writer);
             return QUrl("");
@@ -401,6 +584,7 @@ QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix)
                 qWarning() << "Cannot write archive header for" << relativePath << archive_error_string(writer);
                 archive_entry_free(entry);
                 setError(Errors::ERROR_WRITE);
+                setErrorMessage(archiveErrorString(writer));
                 archive_write_close(writer);
                 archive_write_free(writer);
                 return QUrl("");
@@ -417,6 +601,7 @@ QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix)
         if (!inputFile.open(QIODevice::ReadOnly)) {
             archive_entry_free(entry);
             setError(Errors::ERROR_READ);
+            setErrorMessage(QStringLiteral("Could not read one of the files to export."));
             archive_write_close(writer);
             archive_write_free(writer);
             return QUrl("");
@@ -431,6 +616,7 @@ QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix)
             inputFile.close();
             archive_entry_free(entry);
             setError(Errors::ERROR_WRITE);
+            setErrorMessage(archiveErrorString(writer));
             archive_write_close(writer);
             archive_write_free(writer);
             return QUrl("");
@@ -442,6 +628,7 @@ QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix)
                 inputFile.close();
                 archive_entry_free(entry);
                 setError(Errors::ERROR_WRITE);
+                setErrorMessage(archiveErrorString(writer));
                 archive_write_close(writer);
                 archive_write_free(writer);
                 return QUrl("");
@@ -470,6 +657,11 @@ bool ArchiveManager::isWriteFormatSupported(const QString &suffix) const
     };
 
     return supportedFormats.contains(suffix);
+}
+
+bool ArchiveManager::isEncryptionSupported(const QString &suffix) const
+{
+    return suffix == "zip";
 }
 
 bool ArchiveManager::copy(const QUrl &sourcePath, const QUrl &destination)

@@ -29,8 +29,12 @@ class ArchiveReader: public QAbstractListModel {
     Q_PROPERTY(QString currentDir READ currentDir WRITE setCurrentDir NOTIFY currentDirChanged)
     Q_PROPERTY(QUrl archive READ archive WRITE setArchive NOTIFY archiveChanged)
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
+    Q_PROPERTY(QString passphrase READ passphrase WRITE setPassphrase NOTIFY passphraseChanged)
     Q_PROPERTY(bool hasFiles READ hasFiles NOTIFY hasFilesChanged)
+    Q_PROPERTY(bool requiresPassphrase READ requiresPassphrase NOTIFY requiresPassphraseChanged)
+    Q_PROPERTY(bool encrypted READ encrypted NOTIFY encryptedChanged)
     Q_PROPERTY(Errors error READ error NOTIFY errorChanged)
+    Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
 
 public:
     ArchiveReader(QObject *parent = 0);
@@ -45,6 +49,9 @@ public:
     enum Errors {
         NO_ERRORS,
         UNSUPPORTED_FILE_FORMAT,
+        ERROR_PASSPHRASE_REQUIRED,
+        ERROR_INVALID_PASSPHRASE,
+        ERROR_ENCRYPTION_UNSUPPORTED,
         ERROR_READ,
         ERROR_WRITE,
         ERROR_UNKNOWN
@@ -59,14 +66,20 @@ public:
     QUrl archive() const;
     void setArchive(const QUrl &path);
     QString name() const;
+    QString passphrase() const;
+    void setPassphrase(const QString &passphrase);
     bool hasFiles() const;
+    bool requiresPassphrase() const;
+    bool encrypted() const;
     QString currentDir() const;
     void setCurrentDir(const QString &currentDir);
     Errors error() const;
+    QString errorMessage() const;
 
     Q_INVOKABLE void clear();
     Q_INVOKABLE bool hasData() const;
     Q_INVOKABLE QVariantMap get(int index) const;
+    Q_INVOKABLE void retry();
 
 Q_SIGNALS:
     void modelChanged();
@@ -74,8 +87,12 @@ Q_SIGNALS:
     void archiveChanged();
     void rowCountChanged();
     void errorChanged();
+    void errorMessageChanged();
     void hasFilesChanged();
     void nameChanged();
+    void passphraseChanged();
+    void requiresPassphraseChanged();
+    void encryptedChanged();
 
 protected Q_SLOTS:
     void extract();
@@ -86,13 +103,20 @@ private:
     QString mCurrentDir;
     QUrl mArchive;
     QString mName;
+    QString mPassphrase;
     QString mNewArchiveDir;
     bool mHasFiles;
+    bool mRequiresPassphrase;
+    bool mEncrypted;
     Errors mError;
+    QString mErrorMessage;
     QMap<QString, QList<ArchiveItem>> mArchiveItems;
     QList<ArchiveItem> mCurrentArchiveItems;
     void addArchiveEntry(const QString &entryPath, bool isDir);
     void sortArchiveItems();
+    void setErrorMessage(const QString &message);
+    void setRequiresPassphrase(bool required);
+    void setEncrypted(bool encrypted);
 
     void cleanDirectory(const QString &path);
 };

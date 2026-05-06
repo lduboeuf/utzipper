@@ -1,4 +1,5 @@
 import QtQuick 2.7
+import QtQuick.Layouts 1.3
 import Lomiri.Components 1.3
 import Lomiri.Content 1.3
 import Lomiri.Components.Popups 1.3
@@ -12,6 +13,7 @@ Page {
 
     property var navigation: []
     property string archive: ""
+    property bool passwordDialogOpen: false
 
     function selectAll() {
         const currentIndices = listView.ViewItems.selectedIndices
@@ -32,9 +34,29 @@ Page {
         const selectedFiles = listView.ViewItems.selectedIndices
         const files = selectedFiles.map(idx => archiveReader.get(idx).fullPath);
         console.log("files", files)
-        const outFiles = ArchiveManager.extractFiles(archiveReader.archive, files);
+        const outFiles = ArchiveManager.extractFiles(archiveReader.archive, files, archiveReader.passphrase);
         console.log(outFiles)
         pageStack.push(exportPicker, { files: outFiles })
+    }
+
+    function openPasswordDialog() {
+        if (passwordDialogOpen) {
+            return
+        }
+
+        passwordDialogOpen = true
+        const dialog = PopupUtils.open(passwordDialog, root, {
+            invalidPassword: archiveReader.error === ArchiveReader.ERROR_INVALID_PASSPHRASE
+        })
+        dialog.accepted.connect(function(password) {
+            archiveReader.passphrase = password
+            archiveReader.retry()
+        })
+    }
+
+    function canRetryWithPassphrase() {
+        return archiveReader.error === ArchiveReader.ERROR_PASSPHRASE_REQUIRED
+                || archiveReader.error === ArchiveReader.ERROR_INVALID_PASSPHRASE
     }
 
     header: PageHeader {
@@ -50,13 +72,17 @@ Page {
         trailingActionBar.actions: [
             Action {
                 iconName: "share"
-                enabled: listView.ViewItems.selectedIndices.length > 0
+                enabled: listView.ViewItems.selectedIndices.length > 0 && archiveReader.error === ArchiveReader.NO_ERRORS
                 onTriggered: share()
             },
             Action {
                 iconName: "edit"
+                enabled: archiveReader.error === ArchiveReader.NO_ERRORS
                 onTriggered:  {
-                    pageStack.push("qrc:/ArchiveWriter.qml", { archive: archiveReader.archive});
+                    pageStack.push("qrc:/ArchiveWriter.qml", {
+                        archive: archiveReader.archive,
+                        sourcePassphrase: archiveReader.passphrase
+                    });
                 }
             }
         ]
@@ -137,7 +163,13 @@ Page {
         id: errorMsg
         anchors.centerIn: parent
         visible: archiveReader.error != ArchiveReader.NO_ERRORS
-        text: i18n.tr("Oups, something went wrong");
+        text: archiveReader.errorMessage !== "" ? archiveReader.errorMessage : i18n.tr("Oups, something went wrong")
+
+        MouseArea {
+            anchors.fill: parent
+            enabled: canRetryWithPassphrase()
+            onClicked: openPasswordDialog()
+        }
     }
 
     ListView {
@@ -177,11 +209,93 @@ Page {
         }
     }
 
+    Component {
+        id: passwordDialog
+
+        Dialog {
+            id: passwordDialogue
+            title: i18n.tr("Protected ZIP archive")
+            __closeOnDismissAreaPress: true
+
+            property bool invalidPassword: false
+
+            signal accepted(string password)
+
+            Column {
+                spacing: units.gu(2)
+
+                Label {
+                    width: parent.width
+                    wrapMode: Label.WordWrap
+                    text: passwordDialogue.invalidPassword
+                          ? i18n.tr("The passphrase was not accepted. Please try again.")
+                          : i18n.tr("Enter the passphrase to open this ZIP archive.")
+                }
+
+                TextField {
+                    id: archivePassphraseField
+                    width: parent.width
+                    placeholderText: i18n.tr("passphrase")
+                    echoMode: TextInput.Password
+                    focus: true
+                    Keys.onReturnPressed: unlockButton.clicked()
+                }
+
+                RowLayout {
+                    width: parent.width
+
+                    Button {
+                        text: i18n.tr("cancel")
+                        Layout.fillWidth: true
+                        color: theme.palette.normal.base
+                        onClicked: {
+                            root.passwordDialogOpen = false
+                            PopupUtils.close(passwordDialogue)
+                        }
+                    }
+
+                    Button {
+                        id: unlockButton
+                        text: i18n.tr("unlock")
+                        Layout.fillWidth: true
+                        color: theme.palette.normal.positive
+                        enabled: archivePassphraseField.displayText.length > 0
+                        onClicked: {
+                            root.passwordDialogOpen = false
+                            passwordDialogue.accepted(archivePassphraseField.displayText)
+                            PopupUtils.close(passwordDialogue)
+                        }
+                    }
+                }
+            }
+
+            onVisibleChanged: {
+                if (!visible) {
+                    root.passwordDialogOpen = false
+                }
+            }
+        }
+    }
+
     Connections {
         target: archiveReader
 
         onCurrentDirChanged: {
             listView.ViewItems.selectedIndices = []
+        }
+
+        onErrorChanged: {
+            if (archiveReader.error === ArchiveReader.ERROR_PASSPHRASE_REQUIRED
+                    || archiveReader.error === ArchiveReader.ERROR_INVALID_PASSPHRASE) {
+                openPasswordDialog()
+            }
+        }
+    }
+
+    Component.onCompleted: {
+        if (archiveReader.error === ArchiveReader.ERROR_PASSPHRASE_REQUIRED
+                || archiveReader.error === ArchiveReader.ERROR_INVALID_PASSPHRASE) {
+            openPasswordDialog()
         }
     }
 }

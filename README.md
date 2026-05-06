@@ -3,8 +3,10 @@
 Archive reader/writer for Ubuntu Touch. 
 
 Read support includes `zip`, `tar`, `tar.gz`, `tar.bz2`, `tar.xz`, `7z`, `rar`, `ar`, Debian packages (`.deb`) and Click packages (`.click`).
+Password-protected ZIP archives can be opened with a passphrase.
 
-Write/export support includes `zip`, `tar`, `tar.gz`, `tar.bz2`, `tar.xz`, `7z` and `ar`.
+Write/export support includes `zip`, `tar`, `tar.gz`, `tar.bz2`, `tar.xz` and `7z`.
+ZIP export can optionally be protected with a passphrase.
 `rar` is currently read-only.
 
 For `.deb` and `.click`, the browser opens the package payload from `data.tar.*` so installed files can be explored and extracted directly.

@@ -10,6 +10,49 @@
 
 namespace {
 
+QString normalizedArchiveError(const QString &errorMessage)
+{
+    return errorMessage.trimmed().toLower();
+}
+
+ArchiveOpenError classifyArchiveError(const QString &errorMessage, bool hasPassphrase, int encryptionState)
+{
+    const QString normalizedError = normalizedArchiveError(errorMessage);
+
+    if (normalizedError.contains("incorrect passphrase")
+        || normalizedError.contains("too many incorrect passphrases")) {
+        return ArchiveOpenError::InvalidPassword;
+    }
+
+    if (normalizedError.contains("passphrase")) {
+        if (normalizedError.contains("required") || normalizedError.contains("needs")) {
+            return hasPassphrase ? ArchiveOpenError::InvalidPassword : ArchiveOpenError::PasswordRequired;
+        }
+    }
+
+    if (normalizedError.contains("encryption not supported")
+        || normalizedError.contains("encryption support unavailable")
+        || normalizedError.contains("unsupported encryption")) {
+        return ArchiveOpenError::EncryptionUnsupported;
+    }
+
+    if (encryptionState == 1) {
+        return hasPassphrase ? ArchiveOpenError::ReadError : ArchiveOpenError::PasswordRequired;
+    }
+
+    if (encryptionState == ARCHIVE_READ_FORMAT_ENCRYPTION_UNSUPPORTED) {
+        return ArchiveOpenError::EncryptionUnsupported;
+    }
+
+    if (normalizedError.contains("unrecognized archive format")
+        || normalizedError.contains("unknown format")
+        || normalizedError.contains("unsupported format")) {
+        return ArchiveOpenError::UnsupportedFormat;
+    }
+
+    return ArchiveOpenError::ReadError;
+}
+
 archive *createArchiveReader()
 {
     archive *reader = archive_read_new();
@@ -120,7 +163,7 @@ bool readCurrentEntryData(archive *reader, QByteArray &output, QString *errorMes
     return true;
 }
 
-bool openPackageDataArchive(const QString &filePath, ArchiveReadHandle &handle, QString *errorMessage)
+bool openPackageDataArchive(const QString &filePath, ArchiveReadHandle &handle, const QString &passphrase, ArchiveOpenError *openError, QString *errorMessage)
 {
     archive *outerReader = createArchiveReader();
     const QByteArray encodedPath = QFile::encodeName(filePath);
@@ -161,14 +204,26 @@ bool openPackageDataArchive(const QString &filePath, ArchiveReadHandle &handle, 
     }
 
     handle.reader = createArchiveReader();
+    if (!passphrase.isEmpty()) {
+        archive_read_add_passphrase(handle.reader, passphrase.toUtf8().constData());
+    }
     if (archive_read_open_memory(handle.reader, handle.buffer.constData(), static_cast<size_t>(handle.buffer.size())) != ARCHIVE_OK) {
         if (errorMessage) {
             *errorMessage = QString::fromUtf8(archive_error_string(handle.reader));
+        }
+        if (openError) {
+            *openError = archiveReadError(handle.reader, passphrase, errorMessage ? *errorMessage : QString());
         }
         archive_read_free(handle.reader);
         handle.reader = nullptr;
         handle.buffer.clear();
         return false;
+    }
+
+    const int encryptionState = archive_read_has_encrypted_entries(handle.reader);
+    handle.encrypted = encryptionState == 1;
+    if (openError) {
+        *openError = ArchiveOpenError::NoError;
     }
 
     return true;
@@ -181,29 +236,63 @@ QString archiveMimeTypeForFile(const QString &filePath)
     return QMimeDatabase().mimeTypeForFile(filePath).name();
 }
 
+QString archiveErrorString(archive *handle)
+{
+    if (!handle) {
+        return QString();
+    }
+
+    const char *error = archive_error_string(handle);
+    return error ? QString::fromUtf8(error).trimmed() : QString();
+}
+
+ArchiveOpenError archiveReadError(archive *reader, const QString &passphrase, const QString &fallbackMessage)
+{
+    const int encryptionState = reader ? archive_read_has_encrypted_entries(reader) : ARCHIVE_READ_FORMAT_ENCRYPTION_DONT_KNOW;
+    const QString errorMessage = fallbackMessage.isEmpty() ? archiveErrorString(reader) : fallbackMessage;
+    return classifyArchiveError(errorMessage, !passphrase.isEmpty(), encryptionState);
+}
+
 bool isSupportedArchiveFile(const QString &filePath)
 {
     return hasSupportedExtension(filePath) || hasSupportedMime(archiveMimeTypeForFile(filePath));
 }
 
-bool openArchiveForReading(const QString &filePath, ArchiveReadHandle &handle, QString *errorMessage)
+bool openArchiveForReading(const QString &filePath, ArchiveReadHandle &handle, const QString &passphrase, ArchiveOpenError *openError, QString *errorMessage)
 {
     closeArchiveReader(handle);
+    handle.encrypted = false;
+
+    if (openError) {
+        *openError = ArchiveOpenError::NoError;
+    }
 
     if (isPackageContainer(filePath)) {
-        return openPackageDataArchive(filePath, handle, errorMessage);
+        return openPackageDataArchive(filePath, handle, passphrase, openError, errorMessage);
     }
 
     handle.reader = createArchiveReader();
+    if (!passphrase.isEmpty()) {
+        archive_read_add_passphrase(handle.reader, passphrase.toUtf8().constData());
+    }
     const QByteArray encodedPath = QFile::encodeName(filePath);
     if (archive_read_open_filename(handle.reader, encodedPath.constData(), 10240) != ARCHIVE_OK) {
         if (errorMessage) {
             *errorMessage = QString::fromUtf8(archive_error_string(handle.reader));
         }
+        if (openError) {
+            *openError = archiveReadError(handle.reader, passphrase, errorMessage ? *errorMessage : QString());
+            if (*openError == ArchiveOpenError::ReadError) {
+                *openError = ArchiveOpenError::UnsupportedFormat;
+            }
+        }
         archive_read_free(handle.reader);
         handle.reader = nullptr;
         return false;
     }
+
+    const int encryptionState = archive_read_has_encrypted_entries(handle.reader);
+    handle.encrypted = encryptionState == 1;
 
     return true;
 }
@@ -216,5 +305,6 @@ void closeArchiveReader(ArchiveReadHandle &handle)
         handle.reader = nullptr;
     }
     handle.buffer.clear();
+    handle.encrypted = false;
 }
 

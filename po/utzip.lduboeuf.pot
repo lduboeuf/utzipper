@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-05 17:04+0000\n"
+"POT-Creation-Date: 2026-05-06 08:19+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,82 +33,127 @@ msgstr ""
 msgid "Source code:"
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:78
+#: ../src/qml/ArchiveExplorer.qml:104
 msgid "up"
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:84 ../src/qml/ArchiveWriter.qml:72
+#: ../src/qml/ArchiveExplorer.qml:110 ../src/qml/ArchiveWriter.qml:93
 msgid "home"
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:122
+#: ../src/qml/ArchiveExplorer.qml:148
 msgid "select all"
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:140 ../src/qml/ArchiveWriter.qml:226
+#: ../src/qml/ArchiveExplorer.qml:166 ../src/qml/ArchiveWriter.qml:247
 msgid "Oups, something went wrong"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:35
-msgid "new Archive"
+#: ../src/qml/ArchiveExplorer.qml:217 ../src/qml/ArchiveWriter.qml:442
+msgid "Protected ZIP archive"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:117
-msgid "add files"
+#: ../src/qml/ArchiveExplorer.qml:231 ../src/qml/ArchiveWriter.qml:456
+msgid "The passphrase was not accepted. Please try again."
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:123
-msgid "new folder"
+#: ../src/qml/ArchiveExplorer.qml:232
+msgid "Enter the passphrase to open this ZIP archive."
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:171
-msgid "delete"
+#: ../src/qml/ArchiveExplorer.qml:238 ../src/qml/ArchiveWriter.qml:463
+msgid "passphrase"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:255
-msgid "Import files"
-msgstr ""
-
-#: ../src/qml/ArchiveWriter.qml:266
-msgid "Export archive"
-msgstr ""
-
-#: ../src/qml/ArchiveWriter.qml:273
-msgid "my archive name"
-msgstr ""
-
-#: ../src/qml/ArchiveWriter.qml:283
-msgid "format"
-msgstr ""
-
-#: ../src/qml/ArchiveWriter.qml:292
-msgid ""
-"This format is read-only for now. Please choose zip, tar, tar.gz, tar.bz2, "
-"tar.xz or ar."
-msgstr ""
-
-#: ../src/qml/ArchiveWriter.qml:298 ../src/qml/ArchiveWriter.qml:347
+#: ../src/qml/ArchiveExplorer.qml:248 ../src/qml/ArchiveWriter.qml:353
+#: ../src/qml/ArchiveWriter.qml:413 ../src/qml/ArchiveWriter.qml:473
 msgid "cancel"
 msgstr ""
 
+#: ../src/qml/ArchiveExplorer.qml:259 ../src/qml/ArchiveWriter.qml:484
+msgid "unlock"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:56
+msgid "new Archive"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:138
+msgid "add files"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:144
+msgid "new folder"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:192
+msgid "delete"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:276
+msgid "Import files"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:287
+msgid "Export archive"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:295
+msgid "my archive name"
+msgstr ""
+
 #: ../src/qml/ArchiveWriter.qml:305
+msgid "format"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:313
+msgid "Optional: set a passphrase to protect the exported ZIP archive."
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:320
+msgid "passphrase (optional)"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:328
+msgid "confirm passphrase"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:339
+msgid "The two passphrases must match."
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:347
+msgid ""
+"This format is read-only for now. Please choose zip, tar, tar.gz, tar.bz2, "
+"tar.xz or 7z."
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:360
 msgid "save"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:325
+#: ../src/qml/ArchiveWriter.qml:391
 msgid "Add folder"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:331
+#: ../src/qml/ArchiveWriter.qml:397
 msgid "Folder name"
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:338
+#: ../src/qml/ArchiveWriter.qml:404
 msgid "new folder..."
 msgstr ""
 
-#: ../src/qml/ArchiveWriter.qml:354
+#: ../src/qml/ArchiveWriter.qml:420
 msgid "ok"
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:457
+msgid "Enter the passphrase to extract this ZIP archive before editing it."
+msgstr ""
+
+#: ../src/qml/ArchiveWriter.qml:517
+msgid "Tap to enter passphrase"
 msgstr ""
 
 #: ../src/qml/Main.qml:97

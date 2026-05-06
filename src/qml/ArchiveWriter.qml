@@ -13,12 +13,14 @@ Page {
     objectName: "ArchiveWriter"
 
     property string archive: ""
+    property string sourcePassphrase: ""
     property var navigation: []
+    property bool passwordDialogOpen: false
 
-    function save(archiveName, suffix) {
+    function save(archiveName, suffix, passphrase) {
 
         const name = archiveName.replace(/[\s\?\[\]\/\\=<>:;,\'"&\$#*()|~`!{}%+]+/gi, '_');
-        const archivePath = ArchiveManager.save(name, suffix)
+        const archivePath = ArchiveManager.save(name, suffix, passphrase)
         if (archivePath !== "") {
             pageStack.push(exportPicker, { files: [archivePath]})
             return true
@@ -27,6 +29,25 @@ Page {
             //TODO errorMsg
             return false
         }
+    }
+
+    function extractArchive() {
+        ArchiveManager.extractTo(root.archive, ArchiveManager.newArchiveDir, root.sourcePassphrase)
+    }
+
+    function openPasswordDialog() {
+        if (passwordDialogOpen) {
+            return
+        }
+
+        passwordDialogOpen = true
+        const dialog = PopupUtils.open(passwordDialog, root, {
+            invalidPassword: ArchiveManager.error === ArchiveManager.ERROR_INVALID_PASSPHRASE
+        })
+        dialog.accepted.connect(function(password) {
+            root.sourcePassphrase = password
+            extractArchive()
+        })
     }
 
     header: PageHeader {
@@ -223,7 +244,7 @@ Page {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: importBtn.top
         visible: ArchiveManager.error != ArchiveManager.NO_ERRORS
-        text: i18n.tr("Oups, something went wrong");
+        text: ArchiveManager.errorMessage !== "" ? ArchiveManager.errorMessage : i18n.tr("Oups, something went wrong")
     }
 
 
@@ -265,8 +286,9 @@ Page {
             id: dialogue
             title: i18n.tr("Export archive")
 
-            Column {
+            ColumnLayout {
                 spacing: units.gu(2)
+                anchors { left: parent.left; right: parent.right; }
 
                 TextField {
                     id: nametxt
@@ -281,7 +303,40 @@ Page {
                     id: formatList
                     Layout.fillWidth: true
                     text: i18n.tr("format")
-                    model: ["zip", "tar", "tar.gz", "tar.bz2", "tar.xz", "7z", "ar", "rar"]
+                    model: ["zip", "tar", "tar.gz", "tar.bz2", "tar.xz", "7z", "rar"]
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    visible: formatList.model[formatList.selectedIndex] === "zip"
+                    text: i18n.tr("Optional: set a passphrase to protect the exported ZIP archive.")
+                }
+
+                TextField {
+                    id: passwordtxt
+                    Layout.fillWidth: true
+                    visible: formatList.model[formatList.selectedIndex] === "zip"
+                    placeholderText: i18n.tr("passphrase (optional)")
+                    echoMode: TextInput.Password
+                }
+
+                TextField {
+                    id: passwordConfirmtxt
+                    Layout.fillWidth: true
+                    visible: formatList.model[formatList.selectedIndex] === "zip" && passwordtxt.displayText.length > 0
+                    placeholderText: i18n.tr("confirm passphrase")
+                    echoMode: TextInput.Password
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    color: theme.palette.normal.negative
+                    visible: formatList.model[formatList.selectedIndex] === "zip"
+                             && passwordtxt.displayText.length > 0
+                             && passwordtxt.displayText !== passwordConfirmtxt.displayText
+                    text: i18n.tr("The two passphrases must match.")
                 }
 
                 Label {
@@ -289,7 +344,7 @@ Page {
                     wrapMode: Text.WordWrap
                     color: theme.palette.normal.negative
                     visible: !ArchiveManager.isWriteFormatSupported(formatList.model[formatList.selectedIndex])
-                    text: i18n.tr("This format is read-only for now. Please choose zip, tar, tar.gz, tar.bz2, tar.xz or ar.")
+                    text: i18n.tr("This format is read-only for now. Please choose zip, tar, tar.gz, tar.bz2, tar.xz or 7z.")
                 }
 
                 RowLayout {
@@ -306,13 +361,24 @@ Page {
                         Layout.fillWidth: true
                         color: theme.palette.normal.positive
                         enabled: (nametxt.inputMethodComposing || nametxt.displayText.length > 0)
+                                 && (formatList.model[formatList.selectedIndex] !== "zip"
+                                     || passwordtxt.displayText.length === 0
+                                     || passwordtxt.displayText === passwordConfirmtxt.displayText)
                                  && ArchiveManager.isWriteFormatSupported(formatList.model[formatList.selectedIndex])
                         onClicked: {
-                            if (root.save(nametxt.displayText, formatList.model[formatList.selectedIndex])) {
+                            const selectedFormat = formatList.model[formatList.selectedIndex]
+                            const exportPassphrase = selectedFormat === "zip" ? passwordtxt.displayText : ""
+                            if (root.save(nametxt.displayText, selectedFormat, exportPassphrase)) {
                                 PopupUtils.close(dialogue)
                             }
                         }
                     }
+                }
+            }
+
+            onVisibleChanged: {
+                if (!visible) {
+                    root.passwordDialogOpen = false
                 }
             }
         }
@@ -368,9 +434,97 @@ Page {
         }
     }
 
+    Component {
+        id: passwordDialog
+
+        Dialog {
+            id: passwordDialogue
+            title: i18n.tr("Protected ZIP archive")
+            __closeOnDismissAreaPress: true
+
+            property bool invalidPassword: false
+
+            signal accepted(string password)
+
+            Column {
+                spacing: units.gu(2)
+
+                Label {
+                    width: parent.width
+                    wrapMode: Label.WordWrap
+                    text: passwordDialogue.invalidPassword
+                          ? i18n.tr("The passphrase was not accepted. Please try again.")
+                          : i18n.tr("Enter the passphrase to extract this ZIP archive before editing it.")
+                }
+
+                TextField {
+                    id: sourcePassphraseField
+                    Layout.fillWidth: true
+                    placeholderText: i18n.tr("passphrase")
+                    echoMode: TextInput.Password
+                    focus: true
+                    Keys.onReturnPressed: unlockArchiveButton.clicked()
+                }
+
+                RowLayout {
+                    width: parent.width
+
+                    Button {
+                        text: i18n.tr("cancel")
+                        Layout.fillWidth: true
+                        color: theme.palette.normal.base
+                        onClicked: {
+                            root.passwordDialogOpen = false
+                            PopupUtils.close(passwordDialogue)
+                        }
+                    }
+
+                    Button {
+                        id: unlockArchiveButton
+                        text: i18n.tr("unlock")
+                        Layout.fillWidth: true
+                        color: theme.palette.normal.positive
+                        enabled: sourcePassphraseField.displayText.length > 0
+                        onClicked: {
+                            root.passwordDialogOpen = false
+                            passwordDialogue.accepted(sourcePassphraseField.displayText)
+                            PopupUtils.close(passwordDialogue)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: ArchiveManager
+
+        onErrorChanged: {
+            if (root.archive !== ""
+                    && (ArchiveManager.error === ArchiveManager.ERROR_PASSPHRASE_REQUIRED
+                        || ArchiveManager.error === ArchiveManager.ERROR_INVALID_PASSPHRASE)) {
+                openPasswordDialog()
+            }
+        }
+    }
+
+    Label {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: errorMsg.top
+        visible: root.archive !== ""
+                 && (ArchiveManager.error === ArchiveManager.ERROR_PASSPHRASE_REQUIRED
+                     || ArchiveManager.error === ArchiveManager.ERROR_INVALID_PASSPHRASE)
+        text: i18n.tr("Tap to enter passphrase")
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: openPasswordDialog()
+        }
+    }
+
     Component.onCompleted: {
         if (root.archive !== "") {
-            ArchiveManager.extractTo(root.archive, ArchiveManager.newArchiveDir)
+            extractArchive()
         }
     }
 
