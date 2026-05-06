@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: utzip.lduboeuf\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-06 08:19+0000\n"
+"POT-Creation-Date: 2026-05-06 08:44+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -49,28 +49,28 @@ msgstr ""
 msgid "Oups, something went wrong"
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:217 ../src/qml/ArchiveWriter.qml:442
+#: ../src/qml/ArchiveExplorer.qml:211 ../src/qml/ArchiveWriter.qml:442
 msgid "Protected ZIP archive"
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:231 ../src/qml/ArchiveWriter.qml:456
+#: ../src/qml/ArchiveExplorer.qml:225 ../src/qml/ArchiveWriter.qml:456
 msgid "The passphrase was not accepted. Please try again."
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:232
+#: ../src/qml/ArchiveExplorer.qml:226
 msgid "Enter the passphrase to open this ZIP archive."
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:238 ../src/qml/ArchiveWriter.qml:463
+#: ../src/qml/ArchiveExplorer.qml:232 ../src/qml/ArchiveWriter.qml:463
 msgid "passphrase"
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:248 ../src/qml/ArchiveWriter.qml:353
+#: ../src/qml/ArchiveExplorer.qml:242 ../src/qml/ArchiveWriter.qml:353
 #: ../src/qml/ArchiveWriter.qml:413 ../src/qml/ArchiveWriter.qml:473
 msgid "cancel"
 msgstr ""
 
-#: ../src/qml/ArchiveExplorer.qml:259 ../src/qml/ArchiveWriter.qml:484
+#: ../src/qml/ArchiveExplorer.qml:253 ../src/qml/ArchiveWriter.qml:484
 msgid "unlock"
 msgstr ""
 

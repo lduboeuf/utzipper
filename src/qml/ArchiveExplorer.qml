@@ -164,12 +164,6 @@ Page {
         anchors.centerIn: parent
         visible: archiveReader.error != ArchiveReader.NO_ERRORS
         text: archiveReader.errorMessage !== "" ? archiveReader.errorMessage : i18n.tr("Oups, something went wrong")
-
-        MouseArea {
-            anchors.fill: parent
-            enabled: canRetryWithPassphrase()
-            onClicked: openPasswordDialog()
-        }
     }
 
     ListView {

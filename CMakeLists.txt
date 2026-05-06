@@ -21,48 +21,11 @@ set(FULL_PROJECT_NAME "utzip.lduboeuf")
 set(DATA_DIR /)
 set(DESKTOP_FILE_NAME ${PROJECT_NAME}.desktop)
 
-# This command figures out the minimum SDK framework for use in the manifest
-# file via the environment variable provided by Clickable or sets a default value otherwise.
-if(DEFINED ENV{SDK_FRAMEWORK})
-    set(CLICK_FRAMEWORK "$ENV{SDK_FRAMEWORK}")
-else()
-    set(CLICK_FRAMEWORK "ubuntu-sdk-16.04.3")
-endif()
-
-# This figures out the target architecture for use in the manifest file.
-if(DEFINED ENV{ARCH})
-    set(CLICK_ARCH "$ENV{ARCH}")
-else()
-    execute_process(
-        COMMAND dpkg-architecture -qDEB_HOST_ARCH
-        OUTPUT_VARIABLE CLICK_ARCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-endif()
-
 configure_file(manifest.json.in ${CMAKE_CURRENT_BINARY_DIR}/manifest.json)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/manifest.json DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_NAME}.apparmor DESTINATION ${DATA_DIR})
 install(FILES ${PROJECT_NAME}-contenthub.json DESTINATION ${DATA_DIR})
 install(FILES assets/logo.svg DESTINATION assets)
-
-#qt5_add_resources(QT_RESOURCES qml/qml.qrc)
-#qt5_add_resources(QT_RESOURCES assets/assets.qrc)
-
-#set(
-#    SRC
-#    main.cpp
-#    archiveitem.cpp
-#    archivemanager.cpp
-#    archivereader.cpp
-#)
-
-#add_executable(${PROJECT_NAME} ${SRC} ${QT_RESOURCES})
-#set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELEASE -s)
-#target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${QUAZIP_INCLUDE_DIR})
-#target_link_libraries(${PROJECT_NAME} Qt5::Gui Qt5::Qml Qt5::Quick Qt5::QuickControls2 ${LIBARCHIVE_LIBRARIES}
-#    )
-#install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 # Translations
 file(GLOB_RECURSE I18N_SRC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/po src/qml/*.qml src/qml/*.js)
@@ -87,7 +50,6 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${DESKTOP_FILE_NAME} DESTINATION ${DAT
 
 add_subdirectory(po)
 add_subdirectory(src)
-#add_subdirectory(plugins)
 
 # Make source files visible in qtcreator
 file(GLOB_RECURSE PROJECT_SRC_FILES
