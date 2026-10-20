@@ -29,6 +29,7 @@ class ArchiveManager: public QObject {
 
     Q_PROPERTY(QUrl currentDir READ currentDir WRITE setCurrentDir NOTIFY currentDirChanged)
     Q_PROPERTY(QString currentName READ currentName NOTIFY currentNameChanged)
+    Q_PROPERTY(QStringList supportedWritableFormats READ supportedWritableFormats CONSTANT)
     Q_PROPERTY(Errors error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
     Q_PROPERTY(QUrl tempDir READ tempDir NOTIFY tempDirChanged)
@@ -60,6 +61,7 @@ public:
     void setNewArchiveDir(const QUrl &path);
     Errors error() const;
     QString errorMessage() const;
+    QStringList supportedWritableFormats() const;
 
     Q_INVOKABLE void clear();
     Q_INVOKABLE QList<QUrl> extractFiles(const QUrl &archive, const QList<QUrl> &files, const QString &passphrase = QString());
@@ -69,7 +71,7 @@ public:
     Q_INVOKABLE bool appendFolder(const QString &name, const QUrl &dir);
     Q_INVOKABLE bool removeFolder(const QUrl &folder);
     Q_INVOKABLE QUrl save(const QString &archiveName, const QString &suffix, const QString &passphrase = QString());
-    Q_INVOKABLE bool isWriteFormatSupported(const QString &suffix) const;
+    //Q_INVOKABLE bool isWriteFormatSupported(const QString &suffix) const;
     Q_INVOKABLE bool isEncryptionSupported(const QString &suffix) const;
     Q_INVOKABLE bool copy(const QUrl &sourcePath, const QUrl &destination);
     Q_INVOKABLE bool move(const QUrl &sourcePath, const QUrl &destination);

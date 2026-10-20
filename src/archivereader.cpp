@@ -57,7 +57,7 @@ QString fallbackReaderMessage(ArchiveOpenError error)
 {
     switch (error) {
     case ArchiveOpenError::PasswordRequired:
-        return QStringLiteral("This ZIP archive requires a passphrase.");
+        return QStringLiteral("This archive requires a passphrase.");
     case ArchiveOpenError::InvalidPassword:
         return QStringLiteral("Incorrect passphrase.");
     case ArchiveOpenError::EncryptionUnsupported:
@@ -271,14 +271,16 @@ void ArchiveReader::extract()
             break;
         }
 
-        if (archive_entry_is_encrypted(entry) == 1) {
+        const int entryEncryptionState = archive_entry_is_encrypted(entry);
+        const bool entryEncrypted = entryEncryptionState == 1;
+        const bool entryEncryptionUnknown = entryEncryptionState == ARCHIVE_READ_FORMAT_ENCRYPTION_DONT_KNOW;
+
+        if (mPassphrase.isEmpty() && (entryEncrypted || handle.encrypted)) {
             setEncrypted(true);
-            if (mPassphrase.isEmpty()) {
-                readError = ArchiveOpenError::PasswordRequired;
-                readErrorMessage = fallbackReaderMessage(readError);
-                success = false;
-                break;
-            }
+            readError = ArchiveOpenError::PasswordRequired;
+            readErrorMessage = fallbackReaderMessage(readError);
+            success = false;
+            break;
         }
 
         const char *entryPath = archive_entry_pathname(entry);
@@ -287,9 +289,10 @@ void ArchiveReader::extract()
             addArchiveEntry(QString::fromUtf8(entryPath), isDir);
         }
 
-        // For encrypted entries, we must actually read the data (not just skip it)
-        // because libarchive only validates the passphrase during real data decryption.
-        if (archive_entry_is_encrypted(entry) == 1 && !mPassphrase.isEmpty()) {
+        // Trigger real decryption to validate passphrases on formats where header listing is not enough (RAR/ZIP).
+        const bool mustValidateEntryData = !mPassphrase.isEmpty()
+                && (entryEncrypted || entryEncryptionUnknown || handle.encrypted);
+        if (mustValidateEntryData) {
             char buf[8192];
             la_ssize_t bytesRead = 0;
             bool readOk = true;
@@ -298,7 +301,10 @@ void ArchiveReader::extract()
             }
             if (bytesRead < 0) {
                 readErrorMessage = archiveErrorString(handle.reader);
-                readError = ArchiveOpenError::InvalidPassword;
+                readError = archiveReadError(handle.reader, mPassphrase, readErrorMessage);
+                if (readError == ArchiveOpenError::ReadError) {
+                    readError = ArchiveOpenError::InvalidPassword;
+                }
                 readOk = false;
             }
             if (!readOk) {

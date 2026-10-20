@@ -24,6 +24,7 @@
 #include <QFileInfo>
 #include <QSet>
 #include <QStringList>
+#include <QProcess>
 #include <archive.h>
 #include <archive_entry.h>
 
@@ -55,11 +56,11 @@ QString fallbackManagerMessage(ArchiveOpenError error)
 {
     switch (error) {
     case ArchiveOpenError::PasswordRequired:
-        return QStringLiteral("This ZIP archive requires a passphrase.");
+        return QStringLiteral("This archive requires a passphrase.");
     case ArchiveOpenError::InvalidPassword:
         return QStringLiteral("Incorrect passphrase.");
     case ArchiveOpenError::EncryptionUnsupported:
-        return QStringLiteral("Encrypted ZIP archives are not supported by the current libarchive build.");
+        return QStringLiteral("Encrypted archives are not supported by the current libarchive build.");
     case ArchiveOpenError::UnsupportedFormat:
         return QStringLiteral("Unsupported archive format.");
     case ArchiveOpenError::ReadError:
@@ -141,7 +142,51 @@ bool configureArchiveWriter(struct archive *writer, const QString &suffix, const
         return archive_write_set_format_7zip(writer) == ARCHIVE_OK;
     }
 
+    if (suffix == "rar") {
+        if (errorMessage) {
+            *errorMessage = QStringLiteral("RAR export is not supported by libarchive.");
+        }
+        return false;
+    }
+
     return false;
+}
+
+bool createRarArchiveWithExternalTool(const QString &sourceDir, const QString &outputArchivePath, const QString &passphrase, QString *errorMessage)
+{
+    QProcess rarProcess;
+    rarProcess.setWorkingDirectory(sourceDir);
+
+    QStringList args;
+    args << "a" << "-idq" << "-r";
+    if (passphrase.isEmpty()) {
+        args << "-p-";
+    } else {
+        args << QStringLiteral("-hp%1").arg(passphrase);
+    }
+    args << outputArchivePath << ".";
+
+    rarProcess.start(QStringLiteral("rar"), args);
+    if (!rarProcess.waitForStarted()) {
+        if (errorMessage) {
+            *errorMessage = QStringLiteral("RAR export requires the 'rar' command to be available.");
+        }
+        return false;
+    }
+
+    rarProcess.waitForFinished(-1);
+    if (rarProcess.exitStatus() != QProcess::NormalExit || rarProcess.exitCode() != 0) {
+        if (errorMessage) {
+            const QString stdErr = QString::fromUtf8(rarProcess.readAllStandardError()).trimmed();
+            const QString stdOut = QString::fromUtf8(rarProcess.readAllStandardOutput()).trimmed();
+            *errorMessage = !stdErr.isEmpty()
+                    ? stdErr
+                    : (!stdOut.isEmpty() ? stdOut : QStringLiteral("RAR export failed."));
+        }
+        return false;
+    }
+
+    return true;
 }
 
 }
@@ -519,13 +564,26 @@ QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix, con
 
     QString output = mTempDir.path().append("/").append(archiveName).append(".").append(suffix);
     qDebug() << "save to:" << output;
+
+    if (suffix == "rar") {
+        QString rarErrorMessage;
+        if (!createRarArchiveWithExternalTool(mNewArchiveDir.toLocalFile(), output, passphrase, &rarErrorMessage)) {
+            setError(Errors::ERROR_WRITE);
+            setErrorMessage(rarErrorMessage);
+            return QUrl("");
+        }
+
+        qDebug() << "archive copied to:" << output;
+        return QUrl::fromLocalFile(output);
+    }
+
     struct archive *writer = archive_write_new();
     const bool isArFormat = (suffix == "ar");
     QSet<QString> usedArEntryNames;
     QString writerErrorMessage;
 
     if (!configureArchiveWriter(writer, suffix, passphrase, &writerErrorMessage)) {
-        qWarning() << "ERROR. COMPRESSED FILE TYPE UNKOWN " << output;
+        qWarning() << "ERROR. COMPRESSED FILE TYPE UNKNOWN " << output;
         setError(passphrase.isEmpty() ? Errors::UNSUPPORTED_FILE_FORMAT : Errors::ERROR_ENCRYPTION_UNSUPPORTED);
         setErrorMessage(writerErrorMessage.isEmpty()
                             ? (passphrase.isEmpty()
@@ -645,23 +703,37 @@ QUrl ArchiveManager::save(const QString &archiveName, const QString &suffix, con
     return QUrl::fromLocalFile(output);
 }
 
-bool ArchiveManager::isWriteFormatSupported(const QString &suffix) const
+QStringList ArchiveManager::supportedWritableFormats() const
 {
-    static const QStringList supportedFormats = {
+    return QStringList{
         "zip",
         "tar",
         "tar.gz",
         "tar.bz2",
         "tar.xz",
-        "7z"
+        "7z",
+        "rar"
     };
-
-    return supportedFormats.contains(suffix);
 }
+
+// bool ArchiveManager::isWriteFormatSupported(const QString &suffix) const
+// {
+//     static const QStringList supportedFormats = {
+//         "zip",
+//         "tar",
+//         "tar.gz",
+//         "tar.bz2",
+//         "tar.xz",
+//         "7z",
+//         "rar"
+//     };
+//
+//     return supportedFormats.contains(suffix);
+// }
 
 bool ArchiveManager::isEncryptionSupported(const QString &suffix) const
 {
-    return suffix == "zip";
+    return suffix == "zip" || suffix == "rar";
 }
 
 bool ArchiveManager::copy(const QUrl &sourcePath, const QUrl &destination)

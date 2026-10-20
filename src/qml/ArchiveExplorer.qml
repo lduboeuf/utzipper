@@ -208,7 +208,7 @@ Page {
 
         Dialog {
             id: passwordDialogue
-            title: i18n.tr("Protected ZIP archive")
+            title: i18n.tr("Protected archive")
             __closeOnDismissAreaPress: true
 
             property bool invalidPassword: false
@@ -223,7 +223,7 @@ Page {
                     wrapMode: Label.WordWrap
                     text: passwordDialogue.invalidPassword
                           ? i18n.tr("The passphrase was not accepted. Please try again.")
-                          : i18n.tr("Enter the passphrase to open this ZIP archive.")
+                          : i18n.tr("Enter the passphrase to open this archive.")
                 }
 
                 TextField {

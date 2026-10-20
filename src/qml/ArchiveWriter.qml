@@ -18,10 +18,10 @@ Page {
     property bool passwordDialogOpen: false
 
     function save(archiveName, suffix, passphrase) {
-
+        console.log('save', archiveName, suffix, passphrase)
         const name = archiveName.replace(/[\s\?\[\]\/\\=<>:;,\'"&\$#*()|~`!{}%+]+/gi, '_');
         const archivePath = ArchiveManager.save(name, suffix, passphrase)
-        if (archivePath !== "") {
+        if (archivePath.toString()  !== "") {
             pageStack.push(exportPicker, { files: [archivePath]})
             return true
         } else {
@@ -241,8 +241,8 @@ Page {
 
     Label {
         id: errorMsg
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: importBtn.top
+        anchors.centerIn: parent
+        width: parent.width - units.gu(2)
         visible: ArchiveManager.error != ArchiveManager.NO_ERRORS
         text: ArchiveManager.errorMessage !== "" ? ArchiveManager.errorMessage : i18n.tr("Oups, something went wrong")
     }
@@ -285,6 +285,8 @@ Page {
         Dialog {
             id: dialogue
             title: i18n.tr("Export archive")
+            property string currentFormat: formatList.model[formatList.selectedIndex]
+            property bool canBeProtected: ArchiveManager.isEncryptionSupported(currentFormat)
 
             ColumnLayout {
                 spacing: units.gu(2)
@@ -303,20 +305,20 @@ Page {
                     id: formatList
                     Layout.fillWidth: true
                     text: i18n.tr("format")
-                    model: ["zip", "tar", "tar.gz", "tar.bz2", "tar.xz", "7z", "rar"]
+                    model: ArchiveManager.supportedWritableFormats
                 }
 
                 Label {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
-                    visible: formatList.model[formatList.selectedIndex] === "zip"
-                    text: i18n.tr("Optional: set a passphrase to protect the exported ZIP archive.")
+                    visible: canBeProtected
+                    text: i18n.tr("Optional: set a passphrase to protect the exported %1 archive.").arg(currentFormat)
                 }
 
                 TextField {
                     id: passwordtxt
                     Layout.fillWidth: true
-                    visible: formatList.model[formatList.selectedIndex] === "zip"
+                    visible: canBeProtected
                     placeholderText: i18n.tr("passphrase (optional)")
                     echoMode: TextInput.Password
                 }
@@ -324,7 +326,7 @@ Page {
                 TextField {
                     id: passwordConfirmtxt
                     Layout.fillWidth: true
-                    visible: formatList.model[formatList.selectedIndex] === "zip" && passwordtxt.displayText.length > 0
+                    visible: canBeProtected && passwordtxt.displayText.length > 0
                     placeholderText: i18n.tr("confirm passphrase")
                     echoMode: TextInput.Password
                 }
@@ -333,19 +335,19 @@ Page {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     color: theme.palette.normal.negative
-                    visible: formatList.model[formatList.selectedIndex] === "zip"
+                    visible: canBeProtected
                              && passwordtxt.displayText.length > 0
                              && passwordtxt.displayText !== passwordConfirmtxt.displayText
                     text: i18n.tr("The two passphrases must match.")
                 }
 
-                Label {
-                    Layout.fillWidth: true
-                    wrapMode: Text.WordWrap
-                    color: theme.palette.normal.negative
-                    visible: !ArchiveManager.isWriteFormatSupported(formatList.model[formatList.selectedIndex])
-                    text: i18n.tr("This format is read-only for now. Please choose zip, tar, tar.gz, tar.bz2, tar.xz or 7z.")
-                }
+                // Label {
+                //     Layout.fillWidth: true
+                //     wrapMode: Text.WordWrap
+                //     color: theme.palette.normal.negative
+                //     visible: !ArchiveManager.isWriteFormatSupported(currentFormat)
+                //     text: i18n.tr("This format is read-only for now. Please choose zip, tar, tar.gz, tar.bz2, tar.xz or 7z.")
+                // }
 
                 RowLayout {
                     width: parent.width
@@ -361,16 +363,15 @@ Page {
                         Layout.fillWidth: true
                         color: theme.palette.normal.positive
                         enabled: (nametxt.inputMethodComposing || nametxt.displayText.length > 0)
-                                 && (formatList.model[formatList.selectedIndex] !== "zip"
+                                 && (!canBeProtected
                                      || passwordtxt.displayText.length === 0
                                      || passwordtxt.displayText === passwordConfirmtxt.displayText)
-                                 && ArchiveManager.isWriteFormatSupported(formatList.model[formatList.selectedIndex])
+                                 // && ArchiveManager.isWriteFormatSupported(currentFormat)
                         onClicked: {
-                            const selectedFormat = formatList.model[formatList.selectedIndex]
-                            const exportPassphrase = selectedFormat === "zip" ? passwordtxt.displayText : ""
-                            if (root.save(nametxt.displayText, selectedFormat, exportPassphrase)) {
-                                PopupUtils.close(dialogue)
-                            }
+                            //const selectedFormat = formatList.model[formatList.selectedIndex]
+                            const exportPassphrase = canBeProtected ? passwordtxt.displayText : ""
+                            root.save(nametxt.displayText, currentFormat, exportPassphrase)
+                            PopupUtils.close(dialogue)
                         }
                     }
                 }
@@ -439,7 +440,7 @@ Page {
 
         Dialog {
             id: passwordDialogue
-            title: i18n.tr("Protected ZIP archive")
+            title: i18n.tr("Protected archive")
             __closeOnDismissAreaPress: true
 
             property bool invalidPassword: false
@@ -454,7 +455,7 @@ Page {
                     wrapMode: Label.WordWrap
                     text: passwordDialogue.invalidPassword
                           ? i18n.tr("The passphrase was not accepted. Please try again.")
-                          : i18n.tr("Enter the passphrase to extract this ZIP archive before editing it.")
+                          : i18n.tr("Enter the passphrase to extract this archive before editing it.")
                 }
 
                 TextField {

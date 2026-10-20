@@ -20,7 +20,17 @@ ArchiveOpenError classifyArchiveError(const QString &errorMessage, bool hasPassp
     const QString normalizedError = normalizedArchiveError(errorMessage);
 
     if (normalizedError.contains("incorrect passphrase")
-        || normalizedError.contains("too many incorrect passphrases")) {
+        || normalizedError.contains("too many incorrect passphrases")
+        || normalizedError.contains("wrong passphrase")
+        || normalizedError.contains("invalid passphrase")
+        || normalizedError.contains("bad passphrase")
+        || normalizedError.contains("incorrect password")
+        || normalizedError.contains("wrong password")
+        || normalizedError.contains("invalid password")
+        || normalizedError.contains("bad password")
+        || normalizedError.contains("failed to decrypt")
+        || normalizedError.contains("decryption failed")
+        || normalizedError.contains("password mismatch")) {
         return ArchiveOpenError::InvalidPassword;
     }
 
@@ -28,6 +38,14 @@ ArchiveOpenError classifyArchiveError(const QString &errorMessage, bool hasPassp
         if (normalizedError.contains("required") || normalizedError.contains("needs")) {
             return hasPassphrase ? ArchiveOpenError::InvalidPassword : ArchiveOpenError::PasswordRequired;
         }
+    }
+
+    if (normalizedError.contains("password")
+        && (normalizedError.contains("required")
+            || normalizedError.contains("needs")
+            || normalizedError.contains("needed")
+            || normalizedError.contains("encrypted"))) {
+        return hasPassphrase ? ArchiveOpenError::InvalidPassword : ArchiveOpenError::PasswordRequired;
     }
 
     if (normalizedError.contains("encryption not supported")
